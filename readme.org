@@ -1,0 +1,5 @@
+* About
+PDD is a digital circuit building tool for Python.
+It provides tools to build modular digital circuits through Python code and at the end of it simulate the circuit or simply dump its truth table.
+
+
