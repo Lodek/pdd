@@ -20,23 +20,21 @@ class Gate:
 
     _ops = {'and':Signal.AND, 'or':Signal.OR, 'xor':Signal.XOR}
     
-    def __init__(self, inputs_bus, operation, invert={}, out_bar=False):
-        self.inputs = inputs_bus
-        self.int_output = Bus.from_lines(len(inputs_bus[0]))
-        self.output_term = Terminal(self.int_output)
+    def __init__(self, inputs_bus, operation, invert=[], out_bar=False):
+        self.inputs = [Terminal(bus) for bus in inputs_bus]
+        for i in invert:
+            self.inputs[i].invert = True
+        output_a = Bus.from_lines(len(self.inputs[0].in_bus))
+        self.output = Terminal(output_a)
         self.op = self._ops[operation]
-        self.invert = invert
         
     def _func_spec(self):
-        signals = [bus.signal for bus in self.inputs]
-        for key in self.invert:
-            signals[key] = signals[key].complement()
-        result = signals[0]
-        for signal in signals[1:]:
-            result = self.op(result, signal)
+        result = self.inputs[0].output()
+        for terminal in self.inputs[1:]:
+            result = self.op(result, temrinal.output())
         return result
         
-    def update(self):
+    def compute(self):
         output = self._func_spec()
         self.int_output.signal = output
         self.output_term.propagate()
