@@ -12,31 +12,31 @@ bits for each bus).
 All busses used as inputs to a single gate must have the same size (ie. same
 number of lines)."""
 
-from core import Terminal, Bus
+from core import Terminal, Bus, Signal
 
-class LogicGate:
+class Gate:
 
     """Base class for the basic logic gates"""
 
-    def __init__(self, inputs_bus):
+    _ops = {'and':Signal.AND, 'or':Signal.OR, 'xor':Signal.XOR}
+    
+    def __init__(self, inputs_bus, operation, invert={}, out_bar=False):
         self.inputs = inputs_bus
         self.int_output = Bus.from_lines(len(inputs_bus[0]))
         self.output_term = Terminal(self.int_output)
-        self.op = None
+        self.op = self._ops[operation]
+        self.invert = invert
         
     def _func_spec(self):
-        res = self.inputs[0].signal
-        for sig in self.inputs[1:]:
-            res = self.op(res, sig.signal)
-        return res
+        signals = [bus.signal for bus in self.inputs]
+        for key in self.invert:
+            signals[key] = signals[key].complement()
+        result = signals[0]
+        for signal in signals[1:]:
+            result = self.op(result, signal)
+        return result
         
     def update(self):
-        res = self._func_spec()
-        self.int_output.signal = res
+        output = self._func_spec()
+        self.int_output.signal = output
         self.output_term.propagate()
-
-class AND(LogicGate):
-
-    def __init__(self, inputs_bus):
-        super().__init__(inputs_bus)
-        self.op = Signal.AND

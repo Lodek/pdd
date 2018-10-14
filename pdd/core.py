@@ -1,46 +1,53 @@
 class Signal:
 
-"""Signal abstracts the individual 0s and 1s of a eletric pulse into a higher level
+    """Signal abstracts the individual 0s and 1s of a eletric pulse into a higher level
 entity. Signal encodes the information that is sent back and forth in a digital
 circuit, it can carry an arbitrary number of bits of data which is defined at 
-init time. Signal provides a method that receives a Signal object and returns
-a new object which is the logical negation of the former."""
+init time. Signal provides a methods that perform the standard logical operations
+in two instances of SIgnal and returns a new object"""
     
-    def __init__(self, values):
-        self.values = [int(v) for v in values]
+    def __init__(self, data):
+        self.data = [int(d) for d in data]
 
     @classmethod
     def zeroes(cls, bits):
         return cls('0'*bits)
 
+    def complement(self):
+        return Signal.NOT(self)
+
     def __len__(self):
-        return len(self.values)
+        return len(self.data)
 
     @classmethod
     def NOT(cls, a):
         """Return a new Signal object which is the logical complement for
-the current value of self.values"""
-        inv = [~v for v in a.values]
+the current value of self.data"""
+        inv = [1 if v == 0 else 0 for v in a.data]
         return cls(inv)
 
     @classmethod
     def OR(cls, a, b):
-        res = [i|j for i, j, in zip(a.signal, b.signal)]
+        res = [i|j for i, j, in zip(a.data, b.data)]
         return cls(res)
 
     @classmethod
     def AND(cls, a, b):
-        res = [i&j for i, j, in zip(a.signal, b.signal)]
+        res = [i&j for i, j, in zip(a.data, b.data)]
         return cls(res)
 
     @classmethod
     def XOR(cls, a, b):
-        res = [i^j for i, j, in zip(a.signal, b.signal)]
+        res = [i^j for i, j, in zip(a.data, b.data)]
         return cls(res)
 
+    def __eq__(self, other):
+        return True if self.data == other.data else False
+
+    
 class Bus:
 
-"""The Bus class is an abstraction for a wire or a group of wires. 
+    """The Bus class is an abstraction for a wire or a group of wires. 
 Busses are connected to Inputs and Outputs of Terminals.
 A Bus can only have a single value at once and though its value can change
 its size cannot. The size of a Bus is given by how many bits of information
@@ -73,7 +80,7 @@ to the bus or not. If self.connected is False, then the signal will not propagat
 this is analogous to being at a High Impedance."""
 
     def __init__(self, in_bus, out_bus=None, connected=True, invert=False):
-        self.in_bus = in
+        self.in_bus = in_bus
         self.invert = invert
         self.connected = connected
         self.out_bus = Bus.from_lines(len(in_bus)) if not out_bus else out_bus
@@ -83,7 +90,12 @@ this is analogous to being at a High Impedance."""
         if self.connected:
             self.out_bus.signal = in_sig if not self.invert else in_sig.NOT()
             
-    
+
+class Circuit:
+
+    def __init__(self, inputs, outputs_label):
+        self.inputs = inputs #list busses
+        
 #    """A Block is a general compoenent of a circuit. Blocks could be a simple AND gate
 #    or it could be a full ALU or even processor. Blocks can be made up of blocks.
 #    A block is a general combinational logic element, it has inputs, outputs and
