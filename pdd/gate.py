@@ -21,12 +21,22 @@ class Gate:
     _ops = {'and':Signal.AND, 'or':Signal.OR, 'xor':Signal.XOR}
     
     def __init__(self, inputs_bus, operation, invert=[], out_bar=False):
-        self.inputs = [Terminal(bus) for bus in inputs_bus]
+        self.terminals = {'in' : [], 'out' : []}
+        self.terminals['in'] = [Terminal(bus) for bus in inputs_bus]
         for i in invert:
-            self.inputs[i].invert = True
-        output_a = Bus.from_lines(len(self.inputs[0].in_bus))
-        self.output = Terminal(output_a)
+            self.terminals['in'][i].invert = True
+        output_in_bus = Bus.from_lines(len(inputs_bus[0]))
+        self.terminals['out'] = Terminal(output_in_bus)
         self.op = self._ops[operation]
+
+
+    @property
+    def inputs(self):
+        return [term.in_bus for term in self.terminals['in']]
+
+    @property
+    def output(self):
+        return self.terminals.['out'].out_bus
         
     def _func_spec(self):
         result = self.inputs[0].output()
@@ -36,5 +46,7 @@ class Gate:
         
     def compute(self):
         output = self._func_spec()
-        self.int_output.signal = output
-        self.output_term.propagate()
+        self.output.in_bus.signal = output
+        self.output.propagate()
+        
+

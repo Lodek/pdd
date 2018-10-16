@@ -1,3 +1,7 @@
+
+GND = StaticBus('0')
+VDD = StaticBus('1')
+
 class Signal:
 
     """Signal abstracts the individual 0s and 1s of a eletric pulse into a higher level
@@ -66,6 +70,19 @@ receives the number of line and init them all to 0, returns new Bus"""
     def __len__(self):
         return len(self.signal)
 
+
+class StaticBus(Bus):
+
+    """StaticBus's init signal value is final, it won't be changed
+    useful for defining VDD and GND"""
+
+    @property
+    def signal(self):
+        return self.signal
+
+    @signal.setter
+    def signal(self, value):
+        pass
     
 class Terminal:
 
@@ -79,7 +96,7 @@ Optionally, it is possible to toggle whether the output propagates the signal
 to the bus or not. If self.connected is False, then the signal will not propagate
 this is analogous to being at a High Impedance."""
 
-    def __init__(self, in_bus, out_bus=None, connected=True, invert=False):
+    def __init__(self, in_bus, out_bus=None, connected=VDD, invert=False):
         self.in_bus = in_bus
         self.invert = invert
         self.connected = connected
@@ -100,3 +117,6 @@ class Circuit:
 #    or it could be a full ALU or even processor. Blocks can be made up of blocks.
 #    A block is a general combinational logic element, it has inputs, outputs and
 #    a functional specification."""
+
+class Clock:
+    pass
