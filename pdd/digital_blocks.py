@@ -8,20 +8,16 @@ class HalfAdder(Circuit):
         super().__init__(inputs_bus, outputs_bus)
 
     def _func_spec(self):
-        self.s_gate = Gate((self.terminals['in']['a'].out_bus,
-                       self.terminals['in']['b'].out_bus), 'or')
-        self.cout_gate = Gate((self.terminals['in']['a'].out_bus,
-                          self.terminals['in']['b'].out_bus), 'and')
-        self.terminals['out']['s'].in_bus = s_gate.output
-        self.terminals['out']['cout'].in_bus = cout_gate.output
+        get_bus = self.get_bus
+        self.circuits['s'] = Gate([nodes('in', 'a'), nodes('in', 'b')], 'or')
+        self.circuits['cout'] = Gate((nodes('in', 'a'), nodes('in', 'b')), 'and')
+        
+        set_nodes('out', 's', self.circuits['s'].output)
+        set_nodes('out', 'cout', self.circuits['cout'].output)
 
-    def compute(self):
-        for terminal in self.terminals['in'].items():
-            terminal.propagate()
-        self.s_gate.compute()
-        self.cout_gate.compute()
-        for terminal in self.terminals['out'].items():
-            terminal.propagate()
+
+
+            
         
 a = Bus('000')
 b = Bus('101')

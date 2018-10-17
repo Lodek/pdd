@@ -1,3 +1,4 @@
+from collections import OrderedDict
 
 GND = StaticBus('0')
 VDD = StaticBus('1')
@@ -110,8 +111,38 @@ this is analogous to being at a High Impedance."""
 
 class Circuit:
 
-    def __init__(self, inputs, outputs_label):
-        self.inputs = inputs #list busses
+    def __init__(self, inputs_bus, outputs_bus):
+        self.gates = OrderedDict()
+        self.terminals = {'in':{}, 'out':{}}
+        for label, bus in inputs_bus.items():
+            self.terminals['in'][label] = Terminal(bus)
+            sample_bus = bus
+        for label, bus in outputs_bus.items():
+            real_bus = bus if bus else Bus.from_lines(sample_bus)
+            self.terminals['out'][label] = Terminal(real_bus)
+
+    def nodes(self, group, label):
+        if group == 'in':
+            return self.terminals[group][label].out_bus
+        elif group == 'out':
+            return self.terminals[group][label].in_bus
+        else:
+            return None
+
+    def set_nodes(self, group, label, value):
+        if group == 'in':
+            self.terminals[group][label].out_bus = value
+        elif group == 'out':
+            self.terminals[group][label].in_bus = value
+            
+    def compute(self):
+        for terminal in self.terminals['in'].values():
+            terminal.propagate()
+        for gate in self.gates.values():
+            gate.compute()
+        for terminal in self.terminals['out'].values():
+            terminal.propagate()
+
         
 #    """A Block is a general compoenent of a circuit. Blocks could be a simple AND gate
 #    or it could be a full ALU or even processor. Blocks can be made up of blocks.
