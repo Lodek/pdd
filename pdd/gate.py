@@ -29,7 +29,6 @@ class Gate:
         self.terminals['out'] = Terminal(output_in_bus)
         self.op = self._ops[operation]
 
-
     @property
     def inputs(self):
         return [term.in_bus for term in self.terminals['in']]

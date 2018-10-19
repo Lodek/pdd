@@ -1,7 +1,8 @@
 from collections import OrderedDict
 
-GND = StaticBus('0')
-VDD = StaticBus('1')
+GND = Bus(1)
+VDD = Bus(1)
+VDD.signal = 1
 
 class Signal:
 
@@ -14,15 +15,29 @@ in two instances of SIgnal and returns a new object"""
     def __init__(self, data):
         self.data = [int(d) for d in data]
 
+    def __getitem__(self, index):
+        return self.data[index]
+    
+    def __len__(self):
+        return len(self.data)
+
+    def __eq__(self, other):
+        return True if self.data == other.data else False
+
+    def __repr__(self):
+        return 'Signal({})'.format(self.data)
+        
+    @classmethod
+    def from_wires(cls, wires):
+        data = [w.bit for w in wires]
+        return cls(data)
+        
     @classmethod
     def zeroes(cls, bits):
         return cls('0'*bits)
 
     def complement(self):
         return Signal.NOT(self)
-
-    def __len__(self):
-        return len(self.data)
 
     @classmethod
     def NOT(cls, a):
@@ -46,9 +61,16 @@ the current value of self.data"""
         res = [i^j for i, j, in zip(a.data, b.data)]
         return cls(res)
 
-    def __eq__(self, other):
-        return True if self.data == other.data else False
 
+class Wire:
+    def __init__(self, value=0):
+        self.bit = value
+
+    def __repr__(self):
+        return 'Wire({})'.format(self.bit)
+
+    def __len__(self):
+        return 1
     
 class Bus:
 
@@ -58,43 +80,45 @@ A Bus can only have a single value at once and though its value can change
 its size cannot. The size of a Bus is given by how many bits of information
 it can transmit, each bit is analogous to a physical wire on a real circuit"""
 
-    def __init__(self, values):
-        self.signal = Signal(values)
+    def __init__(self, n=1):
+        self.wires = [Wire() for _ in range(n)] 
 
-    @classmethod
-    def from_lines(cls, lines):
-        """Alternative init for Bus, instead of receiving the bus value
-receives the number of line and init them all to 0, returns new Bus"""
-        values = '0'*lines
-        return cls(values)
+    def __repr__(self):
+        return 'Bus({})'.format(repr(self.signal))
 
     def __len__(self):
-        return len(self.signal)
+        return len(self.wires)
 
-
-class StaticBus(Bus):
-
-    """StaticBus's init signal value is final, it won't be changed
-    useful for defining VDD and GND"""
-
+    def __getitem__(self, index):
+        return Bus._from_wires(self.wires[index])
+    
     @property
     def signal(self):
-        return self.signal
-
+        return Signal.from_wires(self.wires)
+        
     @signal.setter
     def signal(self, value):
-        pass
+        s = Signal(value)
+        for wire, d in zip(self.wires, s.data):
+            wire.bit = d
+
+    @classmethod
+    def _from_wires(cls, wires):
+        bus = Bus(len(wires))
+        bus.wires = wires
+        return bus
     
+        
 class Terminal:
 
-    """Terminals are how circuit blocks communicate information.
+    """Terminals are how circuit blocks interface.
 Terminals are conceptually similar to buffers, its input and output are connected
-to, distinct, busses. The terminal reads the input bus' signal and writes 
+to distinct busses. The terminal reads the input bus' signal and writes 
 that same signal to the output bus. It's possible to use a Terminal as a NOT
 gate as well, in which case the output would be the logical negation of the input.
 The input and output for every circuit Block is a Terminal.
 Optionally, it is possible to toggle whether the output propagates the signal
-to the bus or not. If self.connected is False, then the signal will not propagate
+to the bus or not. If self.connected is tied to GND, then the signal will not propagate
 this is analogous to being at a High Impedance."""
 
     def __init__(self, in_bus, out_bus=None, connected=VDD, invert=False):
@@ -111,7 +135,11 @@ this is analogous to being at a High Impedance."""
 
 class Circuit:
 
-    def __init__(self, inputs_bus, outputs_bus):
+    """A circuit follows the classical definition from digital logic,
+a black box with inputs outputs and a functional specification. 
+A Circuit could be a simple AND gate or it could be a full ALU or even processor."""
+    
+    def __init__(self, inputs_bus, outputs_bus, invert=[]):
         self.gates = OrderedDict()
         self.terminals = {'in':{}, 'out':{}}
         for label, bus in inputs_bus.items():
@@ -120,6 +148,7 @@ class Circuit:
         for label, bus in outputs_bus.items():
             real_bus = bus if bus else Bus.from_lines(sample_bus)
             self.terminals['out'][label] = Terminal(real_bus)
+        
 
     def nodes(self, group, label):
         if group == 'in':
@@ -143,11 +172,48 @@ class Circuit:
         for terminal in self.terminals['out'].values():
             terminal.propagate()
 
-        
-#    """A Block is a general compoenent of a circuit. Blocks could be a simple AND gate
-#    or it could be a full ALU or even processor. Blocks can be made up of blocks.
-#    A block is a general combinational logic element, it has inputs, outputs and
-#    a functional specification."""
+    @property
+    def inputs(self):
+        return {label : term.in_bus for label, term in self.terminals['in'].items()}
 
+    @property
+    def outputs(self):
+        return {label : term.out_bus for label, term in self.terminals['out'].items()}
+        
+class Gate(Circuit):
+
+    """Base class for the basic logic gates"""
+
+    _ops = {'and':Signal.AND, 'or':Signal.OR, 'xor':Signal.XOR}
+    
+    def __init__(self, a, b, operation, out_bus=None, invert=[]):
+        inputs_bus = {'a':a, 'b':b}
+        outputs_bus = {'y':out_bus}
+        for i in invert:
+            self.terminals['in'][i].invert = True
+        output_in_bus = Bus.from_lines(len(inputs_bus[0]))
+        self.terminals['out'] = Terminal(output_in_bus)
+        self.op = self._ops[operation]
+
+    @property
+    def inputs(self):
+        return [term.in_bus for term in self.terminals['in']]
+
+    @property
+    def output(self):
+        return self.terminals['out'].out_bus
+        
+    def _func_spec(self):
+        result = self.inputs[0].output()
+        for terminal in self.inputs[1:]:
+            result = self.op(result, temrinal.output())
+        return result
+        
+    def compute(self):
+        output = self._func_spec()
+        self.output.in_bus.signal = output
+        self.output.propagate()
+
+        
 class Clock:
     pass
