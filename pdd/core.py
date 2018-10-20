@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 GND = Bus(1)
 VDD = Bus(1)
-VDD.signal = 1
+VDD.signal = '1'
 
 class Signal:
 
@@ -121,15 +121,27 @@ Optionally, it is possible to toggle whether the output propagates the signal
 to the bus or not. If self.connected is tied to GND, then the signal will not propagate
 this is analogous to being at a High Impedance."""
 
-    def __init__(self, in_bus, out_bus=None, connected=VDD, invert=False):
-        self.in_bus = in_bus
+    def __init__(self, in_bus=None, connected=VDD, invert=False):
+        self._in_bus = None
+        self.out_bus = None
+        if in_bus:
+            self.in_bus = in_bus
         self.invert = invert
         self.connected = connected
-        self.out_bus = Bus.from_lines(len(in_bus)) if not out_bus else out_bus
+
+    @property
+    def in_bus(self):
+        return self._in_bus
+
+    @in_bus.setter
+    def in_bus(self, bus):
+        self._in_bus = bus
+        l = len(bus)
+        self.out_bus = Bus(l)
         
     def propagate(self):
         in_sig = self.in_bus.signal
-        if self.connected:
+        if self.connected.signal == Signal('1'):
             self.out_bus.signal = in_sig if not self.invert else in_sig.NOT()
             
 
@@ -139,80 +151,80 @@ class Circuit:
 a black box with inputs outputs and a functional specification. 
 A Circuit could be a simple AND gate or it could be a full ALU or even processor."""
     
-    def __init__(self, inputs_bus, outputs_bus, invert=[]):
-        self.gates = OrderedDict()
-        self.terminals = {'in':{}, 'out':{}}
-        for label, bus in inputs_bus.items():
-            self.terminals['in'][label] = Terminal(bus)
-            sample_bus = bus
-        for label, bus in outputs_bus.items():
-            real_bus = bus if bus else Bus.from_lines(sample_bus)
-            self.terminals['out'][label] = Terminal(real_bus)
-        
+    def __init__(self, inputs, outputs, invert=[]):
+        self.invert = invert
+        self.circuits = []
+        self.labels = {'in':inputs, 'out':outputs}
+        self.terminals = {label:Terminal() for label in inputs + outputs}
+        self._func_spec()
 
-    def nodes(self, group, label):
-        if group == 'in':
-            return self.terminals[group][label].out_bus
-        elif group == 'out':
-            return self.terminals[group][label].in_bus
-        else:
-            return None
 
-    def set_nodes(self, group, label, value):
-        if group == 'in':
-            self.terminals[group][label].out_bus = value
-        elif group == 'out':
-            self.terminals[group][label].in_bus = value
-            
+    def _func_spec():
+        pass
+    
+    def connect(self, dic):
+        """Dictionary is of the form {label:bus}, sets external connection of
+Terminal linked to 'label' to 'bus'"""
+        for label, bus in dic.items():
+            if label in self.labels['in']:
+                self.terminals[label].in_bus = bus
+            elif label in self.labels['out']:
+                self.terminals[label].out_bus = bus
+
+    def connections(self, label):
+        if label in self.labels['in']:
+            bus = self.terminals[label].in_bus
+        elif label in self.labels['out']:
+            bus = self.terminals[label].out_bus
+        return bus
+
+    def output(self):
+        label = self.labels['out'][0]
+        return self.terminals[label].out_bus
+
+    def nodes(self, label):
+        """Return Bus associated to internal connection of the Terminal
+linked to label"""
+        if label in self.labels['in']:
+            bus = self.terminals[label].out_bus
+        elif label in self.labels['out']:
+            bus = self.terminals[label].in_bus
+        return bus
+
     def compute(self):
-        for terminal in self.terminals['in'].values():
-            terminal.propagate()
-        for gate in self.gates.values():
-            gate.compute()
-        for terminal in self.terminals['out'].values():
-            terminal.propagate()
+        for label in self.terminals['in']:
+            self.terminals[label].propagate()
+        for circuit in self.circuits:
+            circuit.compute()
+        for label in self.terminals['out']:
+            self.terminals[label].propagate()
 
-    @property
-    def inputs(self):
-        return {label : term.in_bus for label, term in self.terminals['in'].items()}
 
-    @property
-    def outputs(self):
-        return {label : term.out_bus for label, term in self.terminals['out'].items()}
-        
 class Gate(Circuit):
 
     """Base class for the basic logic gates"""
 
     _ops = {'and':Signal.AND, 'or':Signal.OR, 'xor':Signal.XOR}
     
-    def __init__(self, a, b, operation, out_bus=None, invert=[]):
-        inputs_bus = {'a':a, 'b':b}
-        outputs_bus = {'y':out_bus}
-        for i in invert:
-            self.terminals['in'][i].invert = True
-        output_in_bus = Bus.from_lines(len(inputs_bus[0]))
-        self.terminals['out'] = Terminal(output_in_bus)
+    def __init__(self, a, b, operation, invert=[]):
+        inputs = 'a b'.split()
+        outputs = ['y']
         self.op = self._ops[operation]
+        super().__init__(inputs, outputs, invert)
 
-    @property
-    def inputs(self):
-        return [term.in_bus for term in self.terminals['in']]
-
-    @property
-    def output(self):
-        return self.terminals['out'].out_bus
-        
-    def _func_spec(self):
-        result = self.inputs[0].output()
-        for terminal in self.inputs[1:]:
-            result = self.op(result, temrinal.output())
+    def _func_spec(self, a_sig, b_sig):
+        result = self.op(a_sig, b_sig)
         return result
         
     def compute(self):
-        output = self._func_spec()
-        self.output.in_bus.signal = output
-        self.output.propagate()
+        for label in self.terminals['in']:
+            self.terminals[label].propagate()
+        a_sig = self.nodes['a'].signal
+        b_sig = self.nodes['b'].signal
+        result = self._func_spec(a_sig, b_sig)
+        self.nodes['y'].signal = result
+        for label in self.terminals['out']:
+            self.terminals[label].propagate()
 
         
 class Clock:

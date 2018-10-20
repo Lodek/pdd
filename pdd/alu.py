@@ -27,7 +27,8 @@ class ALU(Circuit):
 
         mux_connections = {'0':andg.output, '1':org.output, '2':adder.outputs['s'], '4':GND, 's':self.nodes['f'][:2]}
         mux_select.connect(mux_connections)
-
+        
+        self.terminals['y'].in_bus = mux_select.output
         self.circuits = [mux_b, andg, org, adder, mux_select]
         
             
