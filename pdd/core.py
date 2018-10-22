@@ -1,16 +1,14 @@
 from collections import OrderedDict
 
-GND = Bus(1)
-VDD = Bus(1)
-VDD.signal = '1'
+GND = 0
+VDD = 1
 
 class Signal:
 
-    """Signal abstracts the individual 0s and 1s of a eletric pulse into a higher level
-entity. Signal encodes the information that is sent back and forth in a digital
-circuit, it can carry an arbitrary number of bits of data which is defined at 
-init time. Signal provides a methods that perform the standard logical operations
-in two instances of SIgnal and returns a new object"""
+    """Signal provies an API to deal with digital signals. The data carried by
+a Bus is encoded as a Signal. Signal provides methods to perform logical operations
+that takes Signal objects as operands and return a new instace of Signal.
+Signal is constructed from an iterable that made of 0 and 1. eg. Signal('0101')"""
     
     def __init__(self, data):
         self.data = [int(d) for d in data]
@@ -26,23 +24,17 @@ in two instances of SIgnal and returns a new object"""
 
     def __repr__(self):
         return 'Signal({})'.format(self.data)
-        
+
+    def complement(self):
+        return Signal.NOT(self)
+
     @classmethod
     def from_wires(cls, wires):
         data = [w.bit for w in wires]
         return cls(data)
         
     @classmethod
-    def zeroes(cls, bits):
-        return cls('0'*bits)
-
-    def complement(self):
-        return Signal.NOT(self)
-
-    @classmethod
     def NOT(cls, a):
-        """Return a new Signal object which is the logical complement for
-the current value of self.data"""
         inv = [1 if v == 0 else 0 for v in a.data]
         return cls(inv)
 
@@ -63,22 +55,23 @@ the current value of self.data"""
 
 
 class Wire:
+
+    """A Bus has a number of Wires, each Wire carries a bit of data"""
+    
     def __init__(self, value=0):
         self.bit = value
 
     def __repr__(self):
         return 'Wire({})'.format(self.bit)
 
-    def __len__(self):
-        return 1
-    
 class Bus:
 
     """The Bus class is an abstraction for a wire or a group of wires. 
-Busses are connected to Inputs and Outputs of Terminals.
-A Bus can only have a single value at once and though its value can change
-its size cannot. The size of a Bus is given by how many bits of information
-it can transmit, each bit is analogous to a physical wire on a real circuit"""
+Bus connects Terminals. Bus are made up of Wires therefore they are sliceable,
+slicing a Bus returns a new Bus that is associated to the previosu one. Any
+changes made to the original Bus propagates to the sliced Bus.
+Bus value is given by Signal which gives a higher level API. Two Bus are equal if
+their signals are equal"""
 
     def __init__(self, n=1):
         self.wires = [Wire() for _ in range(n)] 
@@ -90,15 +83,34 @@ it can transmit, each bit is analogous to a physical wire on a real circuit"""
         return len(self.wires)
 
     def __getitem__(self, index):
-        return Bus._from_wires(self.wires[index])
-    
+        """Creates a new Bus from the sliced wires, returns new Bus"""
+        wires = self.wires[index]
+        if type(wires) != list:
+            wires = [wires]
+        return Bus._from_wires(wires)
+
+    def __eq__(self, other):
+        return True if self.signal == other.signal else False
+
+    def extend(self, size):
+        """Changes size of self to size, new Wires are initialized to 0"""
+        nsize = size - len(self)
+        if nsize > 0:
+            self.wires += [Wire() for _ in range(nsize)]
+        else:
+            self.wires = self.wires[:size]
+        
     @property
     def signal(self):
+        """Computes Signal for bus and returns it"""
         return Signal.from_wires(self.wires)
         
     @signal.setter
     def signal(self, value):
+        """Constructs a Signal from value and assigns it to self"""
         s = Signal(value)
+        if len(s) != len(self):
+            raise ValueError('Value has the wrong length')
         for wire, d in zip(self.wires, s.data):
             wire.bit = d
 
@@ -121,13 +133,12 @@ Optionally, it is possible to toggle whether the output propagates the signal
 to the bus or not. If self.connected is tied to GND, then the signal will not propagate
 this is analogous to being at a High Impedance."""
 
-    def __init__(self, in_bus=None, connected=VDD, invert=False):
+    def __init__(self, max_bus = -1, connected=VDD, invert=False):
         self._in_bus = None
-        self.out_bus = None
-        if in_bus:
-            self.in_bus = in_bus
+        self.out_bus = Bus()
         self.invert = invert
         self.connected = connected
+        self.max_bus = max_bus
 
     @property
     def in_bus(self):
@@ -135,15 +146,17 @@ this is analogous to being at a High Impedance."""
 
     @in_bus.setter
     def in_bus(self, bus):
+        if self.bus_requirement != -1 and len(bus) != self.bus_requirement:
+            raise ValueError("Bus size incompatible with requirements")
         self._in_bus = bus
         l = len(bus)
-        self.out_bus = Bus(l)
+        self.out_bus.extend(l)
         
     def propagate(self):
         in_sig = self.in_bus.signal
-        if self.connected.signal == Signal('1'):
+        if self.connected.signal == VDD:
             self.out_bus.signal = in_sig if not self.invert else in_sig.NOT()
-            
+        
 
 class Circuit:
 
@@ -157,27 +170,20 @@ A Circuit could be a simple AND gate or it could be a full ALU or even processor
         self.labels = {'in':inputs, 'out':outputs}
         self.terminals = {label:Terminal() for label in inputs + outputs}
         self._func_spec()
-
+        for label in self.invert:
+            self.terminals[label].invert = True
 
     def _func_spec():
         pass
     
     def connect(self, dic):
-        """Dictionary is of the form {label:bus}, sets external connection of
-Terminal linked to 'label' to 'bus'"""
+        """Dictionary is of the form {label:bus}, attaches 'bus' to  'label' Terminal's in_bus"""
         for label, bus in dic.items():
-            if label in self.labels['in']:
-                self.terminals[label].in_bus = bus
-            elif label in self.labels['out']:
-                self.terminals[label].out_bus = bus
+            self.terminals[label].in_bus = bus
 
-    def connections(self, label):
-        if label in self.labels['in']:
-            bus = self.terminals[label].in_bus
-        elif label in self.labels['out']:
-            bus = self.terminals[label].out_bus
-        return bus
-
+    def outputs(self, label):
+        return self.terminals[label].out_bus
+    
     def output(self):
         label = self.labels['out'][0]
         return self.terminals[label].out_bus
@@ -199,7 +205,6 @@ linked to label"""
         for label in self.terminals['out']:
             self.terminals[label].propagate()
 
-
 class Gate(Circuit):
 
     """Base class for the basic logic gates"""
@@ -215,7 +220,14 @@ class Gate(Circuit):
     def _func_spec(self, a_sig, b_sig):
         result = self.op(a_sig, b_sig)
         return result
-        
+
+
+    def connect(self, dic):
+        super().connect(dic)
+        b = Bus(len(self.nodes['a']))
+        self.connect({'y':b})
+
+
     def compute(self):
         for label in self.terminals['in']:
             self.terminals[label].propagate()
@@ -226,6 +238,6 @@ class Gate(Circuit):
         for label in self.terminals['out']:
             self.terminals[label].propagate()
 
-        
+
 class Clock:
     pass
