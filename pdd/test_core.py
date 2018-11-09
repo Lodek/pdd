@@ -1,5 +1,5 @@
 import unittest
-from core import Signal, Bus, Terminal
+from core import Signal, Bus, Terminal, VDD, GND
 
 class TestSignal(unittest.TestCase):
 
@@ -43,7 +43,35 @@ class TestBus(unittest.TestCase):
         self.assertEqual(Signal('1'), b1.signal)
         self.assertEqual(Signal('01'), b2.signal)
         
+
+class TestTerminal(unittest.TestCase):
+
+    def setUp(self):
+        self.term = Terminal()
+        bus = Bus(4)
+        bus.signal = '1010'
+        self.term.in_bus = bus
         
+    def test_terminal(self):
+        """Tests basic Terminal functionality"""
+        self.term.propagate()
+        self.assertEqual(self.term.in_bus.signal, self.term.out_bus.signal)
+
+    def test_invert(self):
+        self.term.invert = True
+        self.term.propagate()
+        self.assertEqual(self.term.in_bus.signal.complement(), self.term.out_bus.signal)
+
+    def test_connected(self):
+        self.term.connected = GND
+        self.term.propagate()
+        self.assertNotEqual(self.term.in_bus.signal, self.term.out_bus.signal)
+
+    def test_bus_len(self):
+        term = Terminal(bus_len=2)
+        bus = Bus()
+        with self.assertRaises(ValueError):
+            term.in_bus = bus
         
 if __name__ == '__main__':
     unittest.main()
