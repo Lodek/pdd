@@ -1,11 +1,20 @@
-from gate import Gate
-from core import Bus
+from core import Bus, Gate
+import unittest
+
 class TestGate(unittest.TestCase):
 
     def setUp(self):
-        self.a = Bus('101')
-        self.b = Bus('001')
+        self.a = Bus.from_signal('101')
+        self.b = Bus.from_signal('001')
         
     def test_and(self):
-        g = Gate((self.a, self.b), 'and')
+        c = {'a':self.a, 'b':self.b}
+        g = Gate('xor', c)
+        g.update()
+        print(g.output().signal)
+        self.a.signal = '110'
+        self.b.signal = '100'
+        
+if __name__ == '__main__':
+    unittest.main()
         
