@@ -18,7 +18,10 @@ Signal is constructed from an iterable that made of 0 and 1. eg. Signal('0101')"
         logger.debug('New Signal: ' + repr(self))
         
     def to_bits(self):
-        return tuple(reversed(self.data >> i & 0x1 for i in range(self.size)))
+        """Returns a tuple bitwise representation of Signal. 
+The 0th element of the sequence represents the 0th bit.
+This seemingly odd behavior makes slicing busses easier"""
+        return tuple(self.data >> i & 0x1 for i in range(self.size))
 
     def __len__(self):
         return self.size
@@ -28,6 +31,9 @@ Signal is constructed from an iterable that made of 0 and 1. eg. Signal('0101')"
 
     def __repr__(self):
         return 'Signal: ' + hex(self.data)
+
+    def __str__(self):
+        return hex(self.data)
 
     def complement(self):
         return Signal.NOT(self)
