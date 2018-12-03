@@ -1,77 +1,76 @@
-import unittest
-from core import Signal, Bus, Terminal, VDD, GND
+import unittest, logging
+from collections import namedtuple
+from core import Signal, Updater
 
 class TestSignal(unittest.TestCase):
 
+    def setUp(self):
+        self.a = Signal(5, 3)
+        self.b = Signal(0b11, 3)
+        self.c = Signal(0x3, 3)
+        return (self.a, self.b, self.c)
+        
+    def test_basic(self):
+        a = Signal(0x5, 3)
+        self.assertEqual(len(self.a), 3)
+        self.assertEqual(self.a.to_bits(), (1,0,1))
+        
+    def test_consistency(self):
+        bits_to_int = lambda signal : int(''.join([str(bit) for bit in signal.to_bits()]), 2)
+        signals = self.setUp()
+        for signal in signals:
+            self.assertEqual(signal.data, bits_to_int(signal))
+
     def test_operations(self):
-        a = Signal('100')
-        b = Signal('011')
-        c = Signal('100')
-        self.assertEqual(Signal('000'), Signal.AND(a,b))
-        self.assertEqual(Signal('111'), Signal.OR(a,b))
-        self.assertEqual(Signal('111'), Signal.XOR(a,b))
-        self.assertEqual(Signal('011'), Signal.NOT(a))
-        self.assertEqual(a, c)
+        a = Signal(0b0101, 4)
+        b = Signal(0b1010, 4)
+        self.assertEqual(Signal.OR(a, b), Signal(0b1111, 4))
+        self.assertEqual(Signal.AND(a, b), Signal(0b0000, 4))
+        self.assertEqual(Signal.XOR(a, b), Signal(0b1111, 4))
         
 
-class TestBus(unittest.TestCase):
+class mockCircuit:
+    def __init__(self, a, b, c):
+        self.a = a
+        self.b = b
+        self.c = c
 
-    def test_bus(self):
-        init_len = 4
-        b = Bus(init_len)
-        b.signal = '1010'
-        self.assertEqual(b.signal, Signal('1010'))
-        self.assertEqual(len(b), init_len)
-        with self.assertRaises(ValueError):
-            b.signal = '10101'
-        new_len = 8
-        b.extend(new_len)
-        new_sig = '11001100'
-        b.signal = new_sig
-        self.assertEqual(len(b), new_len)
-        self.assertEqual(b.signal, Signal(new_sig))
+    def update(self):
+        self.c.setter(self.a.data + self.b.data)
+    
+class mockBus:
 
-
-    def test_slice(self):
-        b = Bus(4)
-        b.signal = '1010'
-        b1 = b[1]
-        b2 = b[2:]
-        self.assertEqual(Signal('0'), b1.signal)
-        self.assertEqual(Signal('10'), b2.signal)
-        b.signal = '0101'
-        self.assertEqual(Signal('1'), b1.signal)
-        self.assertEqual(Signal('01'), b2.signal)
+    Event = namedtuple('Event', ('bus'))
+    updater = None
+    
+    def __init__(self, data):
+        self.data = data
         
+    def setter(self, data):
+        self.data = data
+        self.updater.notify(self.Event(self))
 
-class TestTerminal(unittest.TestCase):
+class testUpdate(unittest.TestCase):
 
     def setUp(self):
-        self.term = Terminal()
-        bus = Bus(4)
-        bus.signal = '1010'
-        self.term.in_bus = bus
-        
-    def test_terminal(self):
-        """Tests basic Terminal functionality"""
-        self.term.propagate()
-        self.assertEqual(self.term.in_bus.signal, self.term.out_bus.signal)
+        updater = Updater()
+        mockBus.updater = updater
+        ba = mockBus(3)
+        bb = mockBus(5)
+        bc = mockBus(0)
+        circ_a = mockCircuit(ba, bb, bc)
+        updater.subscribe(circ_a, (ba, bb))
+        self.ba = ba
+        self.bb = bb
+        self.bc = bc
+        self.updater = updater
 
-    def test_invert(self):
-        self.term.invert = True
-        self.term.propagate()
-        self.assertEqual(self.term.in_bus.signal.complement(), self.term.out_bus.signal)
-
-    def test_connected(self):
-        self.term.connected = GND
-        self.term.propagate()
-        self.assertNotEqual(self.term.in_bus.signal, self.term.out_bus.signal)
-
-    def test_bus_len(self):
-        term = Terminal(bus_len=2)
-        bus = Bus()
-        with self.assertRaises(ValueError):
-            term.in_bus = bus
+    def test_updater(self):
+        self.ba.setter(10)
+        self.assertEqual(len(self.updater.events), 1)
+        self.updater.handle_events()
+        self.assertEqual(self.bc.data, 15)
         
 if __name__ == '__main__':
+    logging.basicConfig(filename='pdd.log', filemode='w', level=logging.DEBUG)
     unittest.main()
