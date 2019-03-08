@@ -4,9 +4,6 @@ from core import Signal
 
 class TestBus(unittest.TestCase):
 
-    def rout(self):
-        b = Bus(4)
-    
     def test_basic(self):
         b = Bus(4)
         self.assertEqual(len(b), 4)
@@ -27,13 +24,11 @@ class TestBus(unittest.TestCase):
         b_slice.signal = 0b11
         self.assertEqual(b.signal, Signal(14, 4))
 
-    def test_extend(self):
-        b = Bus(2, 0b11)
-        b.extend(3)
-        self.assertEqual(len(b), 3)
-        self.assertEqual(b.signal, Signal(3, 3))
-        b.signal = 0b100
-        self.assertEqual(b.signal, Signal(4, 3))
+    def test_add(self):
+        a = Bus(1, 1)
+        b = Bus(1, 0)
+        c = a + b
+        self.assertEqual(b.signal.data, 2)
 
 
 class TestTerminal(unittest.TestCase):

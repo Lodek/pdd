@@ -55,13 +55,13 @@ class Bus:
             sig |= wire.bit << i
         return sig
 
-    def extend(self, size):
-        """Changes the number of wires in the bus, new Wires are initialized to 0"""
-        nsize = size - len(self)
-        if nsize > 0:
-            self.wires += [Wire() for _ in range(nsize)]
+    def __add__(self, other):
+        """Combine buses. self.wires become most significant bits followed by other.wires"""
+        if type(other) is Bus:
+            wires = self.wires + other.wires
+            return self._from_wires(wires)
         else:
-            self.wires = self.wires[:size]
+            return NotImplemented
 
     @property
     def signal(self):
