@@ -1,5 +1,5 @@
-import unittest, logging
-from digital_logic import Wire, Bus
+import unittest, logging, pdb
+from digital_logic import Wire, Bus, Terminal
 from core import Signal
 
 class TestBus(unittest.TestCase):
@@ -34,12 +34,39 @@ class TestBus(unittest.TestCase):
         self.assertEqual(b.signal, Signal(3, 3))
         b.signal = 0b100
         self.assertEqual(b.signal, Signal(4, 3))
-                         
-        
-                         
-        
-        
 
+
+class TestTerminal(unittest.TestCase):
+
+    def setUp(self):
+        self.in_bus = Bus(n=4, signal=2)
+        self.term = Terminal()
+
+    def test_init(self):
+        self.term.in_bus = self.in_bus
+        self.term.propagate()
+        self.assertEqual(self.term.in_bus.signal, self.term.out_bus.signal)
+        self.assertEqual(len(self.term.out_bus), 4)
+
+    def test_invert(self):
+        self.term.in_bus = self.in_bus
+        self.term.invert = True
+        self.term.propagate()
+        self.assertEqual(self.term.in_bus.signal.complement(), self.term.out_bus.signal)
+
+    def test_enable(self):
+        self.term.in_bus = self.in_bus
+        self.term.enable = self.term.GND
+        self.term.propagate()
+        self.assertEqual(Signal(0, 4), self.term.out_bus.signal)
+
+    def test_bus_len_error(self):
+        self.term.bus_len = 2
+        with self.assertRaises(ValueError):
+            self.term.in_bus = self.in_bus
+        
+        
+    
 if __name__ == '__main__':
-    logging.basicConfig(filename='pdd.log', filemode='w', level=logging.DEBUG)
+    logging.basicConfig(filename='digital_logic.log', filemode='w', level=logging.DEBUG)
     unittest.main()

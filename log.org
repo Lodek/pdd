@@ -1,0 +1,118 @@
+* pdd is supposed to breach a gap between boolean logic and digital circuits. Digital circuits follow the static discipline which assures the voltage levels falls within a range (Agarwal, 252). Boolean Algebra has perfect signals. Boolean algebra alone can implement any circuit however it's a bit too abstract. Considering some implementation details of circuits such as wires, circuit blocks can be helpful. 
+
+* Bus is an array of boolean variables
+
+* circuits have an input bus, output bus and functional specification. Functional specification is a function to produce the output from the input
+
+* It would be cool if PDD could give the representation of a circuit in boolean algebra functional form
+
+* As defined by harris a circuit has an input output and functional specification. This description is a powerful use of abstraction to simplify the meaning of a circuit. By this definition one can represent ANY digital circuit, this representation is a very powerful theoretical tool but as circuits grow in complexity so do their functional specification. There's a real need and desire to further simplify the representation of a digital circuit. 
+
+* Another discipline/abstraction arrises. A group of digital circuits of great importance become "building blocks". Circuits are then built from these building blocks as opposed to mathematical functions. This is the schematic level of abstraction. Schematics are diagrams showing the elements (circuit blocks) and the wires that connect said blocks together. This is the level of abstraction PDD will cover.
+
+* Schematics introduces modularity to circuits. By utilizing the well known blocks and connecting circuit elements together through wires the daunting task of understanding a complex digital circuit is greatly simplified. Schematics is how a lot of circuits are developed in the real world.
+
+* The downside is that building circuits from schematics using pre-packaged chips is fairly tedious and as circuits grow in complexity the number of wires and connections becomes immense which also increases the change of making a wrong connection. Debugging a faulty circuit is no easy task. Pdd hopes to simplify the process a bit. 
+
+* By further abstracting the entities of a circuit pdd can simplify a complex schematic. A group of wires can be condensed to a Bus, Buses are connected to circuit element. It becomes easy to see to which circuits a bus is connected to. It also becomes easy to see the connections of a circuit. Testing is simplified by painlessly iterating through the possible input levels of a circuit and generating its truth table.
+
+* Imagining an use for it: An interactive session; a command prompt and a top like display of circuit blocks and busses. User creates a bus, attaches it to a circuit. Each time user assigns a new value to a bus the updater updates all of the system.
+
+* The API for interactive usage should be simple. I think my idea for the api so far is good. Could leverage pythons built ins to add documentation/help. something like circuit.terminals to get the terminals names and their respective buses. circuit.info to  get a description of the block. 
+
+* interactive usage can a while true input with execs, parsers and calls to updater and to redraw terminal application
+
+* once it gets done I could host it on the web on one of those interactive ipython screens. dopeness overload.
+
+* Any circuit diagram should be able to get condensend into a class. Writing classes should be as easy as possible and should use a similar api to interactive usage.
+
+* Regardless, to utilize the software the user needs to instantiate buses, and attach it to circuits. 
+
+* Perhaps define 2 buses class? One for internal usage as in, internal connections inside a circuit block and another for external usage? External busses get put onto a watch list of some sort so updater runs whenever they value update?
+
+* The above idea for interactive usage is all well and good if there's no clock (ie combinational logic). What about when there is a clock? Perhaps add a pulse() clause to the clock. A few configuration directives such as pulse_on_return so it simulates a clock pulse each return regardless. A clock object seems to be necessary more and more.
+
+* interactive usage ex:
+a1, a2 = Bus(), Bus() #defaults to 1 bit
+#each bus gets added to monitor.
+g1 = AND(a=a1, b=a2) #use kwargs to avoid dictionary. simple and beautiful
+g2 = OR()
+g2.connect(a=a1) #same for connect, if connection doesn't exist raises an attribute error and prints out the available terminal names
+g2.connect(b=a2)
+# g1 and g2 get added to the tracker as well as a1, a2
+a1 = 0 #direct assignment to bus?
+a2.signal = 3 #throw some kind of error or truncate extra numbers? Possible directive for that. pythons global __dict__ could be a good place to store this type of thing
+# direct assignment seems really attractive. less verbosity and it makes sense?? Problem is that we are assigning to a name, I don't think I can overide that behavior since it goes again the dynamic typing paradigm. 
+# a2.signal is pretty alright too, hopefully I can do better
+#each command would be run after the user types them and monitor would be updated as well.
+# that about covers basically functionality though, it really is just a bunch of object initialization, buses and calls to update
+# now lets chain some circuit modules
+# avoid dictionaries like the plague, they are a pain to build
+b = g2.output_bus('y') #return output bus for the 'y' terminal
+b = g2.output_bus() # in case the circuit has a single output its name can be ommited
+c = Bus(1, label='c') #optional label attribute to bus. label will be shown on monitor? don't know about that one
+g3 = NAND(b, c) # tuple unpacking feature, assigns objects the same order they show up in g3.terminals
+# seems dope? Don't know how to handle clock yet but this seems nice. What would I need to make that a thing?
+# and what should be the api be for constructing a circuit class... I feel like doing the same as interactive usage would be excellent
+# maybe it's a bit verbose but it's so modular that I don't think it would matter much
+
+* class mockup
+class NewCircuit(BaseCircuit):
+
+    def __init__(self, *args, **kwargs):
+        self.inputs = ('a', 'b', 'c')
+        self.outputs = 'y z'.split()
+        #sequence with terminal names as elements
+        #bubles, define where?
+        #and connections?
+        super().__init__() #instantiate inputs, outputs, terminals
+        self.connect(kwargs)
+
+    def wiring(self):
+        #Wiring should resemble interactive usage as much as possible
+        inputs = self._get_inputs() #returns object for the 'y' buses in the inputs terminals. buses accessible by .attrs. Brilliant
+        g1 = NOR(inputs.a, inputs.b)
+        g2 = NAND(g1.output_bus(), inputs.c)
+        g3 = NOR(g2.output_bus, g1.output_bus)
+        #will garbage collector rekt my gate objects if I don't assign them to self? I wonder.
+        self.set_outputs(y=g2.output_bus(), g3.output_bus())
+        #yeeeeeeeeeeah, this is NICE.
+        
+class Multiplexer(BaseCircuit):
+
+    def __init__(self, select_size=1, *args, **kwargs):
+        self.select_size
+        num_inputs = 2 ** select_size
+        self.inputs = ['s'] + ['a{}'.format(i) for i in range(num_inputs)]
+        self.outputs = ['y']
+        #...
+
+    def set_outputs(**kwargs):
+        if 's' in kwargs:
+            assert(s.size == self.select_size)
+        #....
+        
+
+* considerations
+- some gates might have inputs that depend on bus width (eg multiplexer, n-input logic gate). For those circuits subclass should check bus-length and create the number of inputs at init
+
+* SignalGenerator class: Generate signals from a sequence. Each new pulse or whatever feeds on of the signal. Clock will be a subclass of SigGen
+* SigGen should somehow take multiple busses and count over their values, in effect swiping the whole truth table of the circuit
+* Base class to all circuits with method to return a circuit object for inspection or whatever. Each circuit with an ID? Maybe dictionary with circuits names as well. Lots of possibilities.
+* Why not HDL? HDL are a fantastic IF one expects to work with digital design in the future but I arguee that for an introduction to digital circuits and a desire to familiarize with the subject without having to put the effort into learning a tool that was designed for engineers and is, arguably, very technical (it was developed by IEEE after all). To put it simly, they are great tools but they covers more than beginners, especially those that will never get into serious digital design, need to know. PDD is an interactive, sandbox like environment that can ease the process of learning about digital circuits.
+* HDL includes notions of time, which will be present in any circuit, but it might be desireable to abstract that and design ideal circuits without worrying about data-path lengths, propagation delays and race conditions. For any serious and real-world design of digital circuits HDL are the way to go, it is the standard for a reason.
+* X state: Means circuit is missing a connection
+* Terminals should have matching length busses. Upon initializing terminal it will not be possible to change the bus? Is that rasonable? I feel like it is.
+* My biggest issue is that I don't know how much I should include on the circuit class or at init. Okay, let's try to enumerate stuff
+* Circuit class:
+- Bubbles
+- Inputs 
+- Outputs
+- Possible inputs with bus size constraints
+- Possible EN signal for certain outputs or inputs
+- when should I initialize inputs, outputs bus? I hate apis that make you go through multiple lines of code for stuff that can be done in one
+* Getting caught up with small detais and edge cases again. How can I avoid going down a rabbit hole?
+* How to delegate task?
+- Who should check that 'a' and 'y' of terminal are equally sized busses? I feel like terminal should. Yeah, otherwise it breaks encapsulation. Circuit can make the calls to check but terminal should do the checking
+- Should the bus lengths of a circuit be specified at init? That could solve a lot of problems but it's really ugly. yes, yes it should. I'm trying to abstract things but a 2 bit adder is not the same as a 8-bit adder. Circuits shouldn't be multable like that. I could do some magic so the user doesn't have to input things manually but a circuit should not mutate. An 8 bit circuit is 8 bit for all it's lifetime.
+- Okay, I think that solves 2 big issues that I had, really.

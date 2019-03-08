@@ -11,9 +11,12 @@ class TestSignal(unittest.TestCase):
         return (self.a, self.b, self.c)
         
     def test_basic(self):
-        a = Signal(0x5, 3)
+        a = Signal(0b101, 3)
         self.assertEqual(len(self.a), 3)
         self.assertEqual(self.a.to_bits(), (1,0,1))
+        b = a.complement()
+        c = Signal(0b010, 3)
+        self.assertEqual(b, c)
         
     def test_consistency(self):
         bits_to_int = lambda signal : int(''.join([str(bit) for bit in signal.to_bits()]), 2)
@@ -72,5 +75,5 @@ class testUpdate(unittest.TestCase):
         self.assertEqual(self.bc.data, 15)
         
 if __name__ == '__main__':
-    logging.basicConfig(filename='pdd.log', filemode='w', level=logging.DEBUG)
+    logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)
     unittest.main()
