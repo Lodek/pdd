@@ -1,10 +1,22 @@
 """Module containg abstractions which are used to implement digital logic. The objects in this module aren't physical entities as much as concepts in digital logic"""
 
-from collections import OrderedDict, defaultdict, deque
+from collections import defaultdict, deque
 import logging
 
 logger = logging.getLogger(__name__)
 
+class Wire:
+    """
+    Wire represents a bit of data.
+    """
+    def __init__(self, bit=0):
+        self.bit = bit
+
+    def __repr__(self):
+        s = '{}: bit={};'
+        return s.format(self.__class__, self.bit)
+
+ 
 class Signal:
     """
     Signal abstracts digital signals and is used to set values on a Bus.
@@ -12,33 +24,35 @@ class Signal:
     a Bus is encoded as a Signal. Signal provides methods to perform logical operations
     that take Signal objects as operands and return a new instace of Signal.
     """
-    def __init__(self, data, size):
-        if type(data) != int:
-            s = "Signal data can be int or Signal. Given {} of type {}"
-            raise TypeError(s.format(value, type(value)))
-        self.data = data
-        if size <= 0:
-            raise ValueError('Size must be > 0')
+    def __init__(self, value, size):
+        if type(value) is int:
+            self.value = value
+        else:
+            msg = 'Argument of type {} to {}. Must be an Integer'
+            e = TypeError(msg.format(type(value), self.__class__))
+            logger.exception(e)
+            raise e
         self.size = size
-        logger.debug('New Signal: ' + repr(self))
+        logger.debug(repr(self))
         
     def to_bits(self):
         """Return a tuple bitwise representation of Signal. 
         The 0th element of the sequence represents the 0th bit.
         This seemingly odd behavior makes slicing busses easier"""
-        return tuple(self.data >> i & 0x1 for i in range(self.size))
+        return tuple(self.value >> i & 0x1 for i in range(self.size))
 
     def __len__(self):
         return self.size
 
     def __eq__(self, other):
-        return self.data == other.data
+        return self.value == other.value
 
     def __repr__(self):
-        return 'Signal: ' + hex(self.data)
-
+        s = '{}: value={};'
+        return s.format(self.__class__, hex(self.value))
+        
     def __str__(self):
-        return hex(self.data)
+        return hex(self.value)
 
     def complement(self):
         return Signal.NOT(self)
@@ -48,23 +62,23 @@ class Signal:
         mask = 0
         for i in range(len(a)):
             mask |= 1 << i
-        data = ~a.data & mask
-        return cls(data, len(a))
+        value = ~a.value & mask
+        return cls(value, len(a))
 
     @classmethod
     def OR(cls, a, b):
-        data = a.data | b.data
-        return cls(data, len(a))
+        value = a.value | b.value
+        return cls(value, len(a))
 
     @classmethod
     def AND(cls, a, b):
-        data = a.data & b.data
-        return cls(data, len(a))
+        value = a.value & b.value
+        return cls(value, len(a))
 
     @classmethod
     def XOR(cls, a, b):
-        data = a.data ^ b.data
-        return cls(data, len(a))
+        value = a.value ^ b.value
+        return cls(value, len(a))
 
 class Updater:
     """
@@ -112,31 +126,22 @@ class Updater:
         and handling events is likely to cause more events to be generated.
 
         If the number of events in the cycle exceed threshold, raises a Runtime error
-        with the last 10 circuits handled.
+        with the last circuits handled.
         """
         logger.info('Handling events')
-        last_10 = deque([None]*10, maxlen=10)
+        deque_len = 50
+        last = deque([None]*deque_len, maxlen=deque_len)
         for i in range(self.threshold):
             try:
                 event = self.events.pop(0)
                 logger.debug('Handling event {}'.format(event))
                 for circuit in self.relations[id(event.bus)]:
-                    last_10.append(circuit)
+                    last.append(circuit)
                     logger.debug('updating circuit {}'.format(circuit))
                     circuit.update()
             except IndexError:
                 break
         else:
             error_str = 'Update threshold blew up; check for cyclic path.'
-            error = RuntimeError(error_str, last_10)
+            error = RuntimeError(error_str, last)
             raise error
-
-
-class Inspector:
-    """
-    I wish I knew
-    """
-    pass
-    
-
-

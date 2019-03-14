@@ -1,5 +1,5 @@
 import unittest, logging, pdb
-from digital_logic import Wire, Bus, Terminal
+from dl import Bus, Terminal
 from core import Signal
 
 class TestBus(unittest.TestCase):
@@ -28,39 +28,44 @@ class TestBus(unittest.TestCase):
         a = Bus(1, 1)
         b = Bus(1, 0)
         c = a + b
-        self.assertEqual(b.signal.data, 2)
+        self.assertEqual(c.signal.value, 2)
 
 
 class TestTerminal(unittest.TestCase):
-
     def setUp(self):
-        self.in_bus = Bus(n=4, signal=2)
-        self.term = Terminal()
+        self.t = Terminal(1)
+        a = Bus(1, 1)
+        y = Bus(1, 0)
+        self.t.a = a
+        self.t.y = y
+ 
+    def test_basic(self):
+        self.assertEqual(self.t.a.signal, Signal(1,1))
+        self.assertEqual(self.t.y.signal, Signal(0,1))
+        self.t.propagate()
+        self.assertEqual(self.t.a, self.t.y)
+       
+    def test_bubble(self):
+        self.t.propagate()
+        self.t.bubble = True
+        self.t.propagate()
+        self.assertEqual(self.t.y.signal, Signal(0, 1))
 
-    def test_init(self):
-        self.term.in_bus = self.in_bus
-        self.term.propagate()
-        self.assertEqual(self.term.in_bus.signal, self.term.out_bus.signal)
-        self.assertEqual(len(self.term.out_bus), 4)
-
-    def test_invert(self):
-        self.term.in_bus = self.in_bus
-        self.term.invert = True
-        self.term.propagate()
-        self.assertEqual(self.term.in_bus.signal.complement(), self.term.out_bus.signal)
-
-    def test_enable(self):
-        self.term.in_bus = self.in_bus
-        self.term.enable = self.term.GND
-        self.term.propagate()
-        self.assertEqual(Signal(0, 4), self.term.out_bus.signal)
-
-    def test_bus_len_error(self):
-        self.term.bus_len = 2
+    def test_propagate(self):
+        self.t.en = Bus(1, 0)
+        self.t.propagate()
+        self.assertEqual(self.t.y.signal, Signal(0, 1))
+        
+    def test_setter(self):
+        a = Bus(2, 1)
         with self.assertRaises(ValueError):
-            self.term.in_bus = self.in_bus
+            self.t.a = a
+        with self.assertRaises(ValueError):
+            self.t.en = a
+        with self.assertRaises(TypeError):
+            self.t.a = 5
         
-        
+
     
 if __name__ == '__main__':
     logging.basicConfig(filename='digital_logic.log', filemode='w', level=logging.DEBUG)

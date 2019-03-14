@@ -1,148 +1,149 @@
+from collections import namedtuple
+from core import Updater, Signal, Wire
+import logging
 
-class Circuit:
-
-    """Circuit is a base class that is inhereted to implement circuits from digital logic.
-
-    A circuit follows the classical definition from the digital logic a black box with inputs,
-    outputs and a functional specification.  A Circuit could be a simple AND gate or it could 
-    be a full ALU or even processor.
-
-    Circuit makes certain assumptions about its usage. To use Circuit one must:
-    instantiate an object, assign a bus to all of its input terminals either at init
-    time or later using `connect()`. That in turn creates Bus objects for the output
-    terminals. Buses must not be assigned to output terminals.
-
-
-    `inputs` is a list of strings with labels for the input terminals
-    `outputs` is a list of string with labels for the output terminals
-    `bus_lens` is a dictionary with a terminal label and a bus size
-    `connections` is a dictionary with a label belonging to an internal terminal and a bus
-    `bubles` is a list of strings with labels for terminal whose output will be inverted
+updater = Updater() #module wide declartion of Updater
+logger = logging.getLogger(__name__)
+       
+class Bus:
     """
-    def __init__(self, inputs, outputs, bus_lens={}, bubbles=[], connections=None):
-        self.labels = {'in':inputs, 'out':outputs}
-        self._set_bubbles({bubble : True for bubble in bubbles})
-        self.circuits = []
-        self.terminals = {}
-        self.bus_lens = bus_lens
-        if connections:
-            self.connect(connections)
+    The Bus class is an abstraction for a wire or a group of wires. 
+    Bus connects Terminals. Bus are made up of Wires and are sliceable.
+    Slicing a Bus returns a new Bus with the matching wires. Any changes made
+    to the original Bus propagates to the sliced Bus.
+    Bus value is given by Signal which gives a higher level API. Two Bus are equal if
+    their signals are equal
+    """
+    BusEvent = namedtuple('BusEvent', ('signal'))
 
-    def _set_bus_lens(self):
-        """Sets a bus_len requirement on all terminals in `bus_lens`"""
-        for label, length in self.bus_lens:
-            self.terminals[label].bus_len = length
+    def __init__(self, n=1, signal=0):
+        self.wires = [Wire() for _ in range(n)]
+        self.signal = signal
+        logger.debug(repr(self))
+
+    def __repr__(self):
+        s = '{}: signal={}; len={};'
+        return s.format(self.__class__, self.signal, len(self))
         
-    def _set_bubbles(self, bubbles):
-        """Expects a dictionary with {terminal_label : Value}
-        Sets the Terminal associated to the label to Value"""
-        for label, value in bubbles.items():
-            self.terminals[label].invert = value
-            
-    def func_spec(self):
-        """Function where the 'wiring' for the circuit is defined.
-        In `func_spec` all gates and circuits should be instantiated and all buses
-        must be assigned. func_spec is what determines what the circuit does"""
-        pass
+    def __len__(self):
+        return len(self.wires)
+
+    def __getitem__(self, index):
+        """Creates a new Bus from the sliced wires, returns new Bus"""
+        wires = self.wires[index]
+        if type(wires) != list:
+            wires = [wires]
+        return Bus._from_wires(wires)
+
+    def __eq__(self, other):
+        return True if self.signal == other.signal else False
     
-    def connect(self, dic):
-        """Assigns buses in dic to in_bus of all Terminals defined by the `inputs`.
-        Expects Dictionary of the form {label:bus} and attaches 'bus' to  'label'.
-        Dictionary must contain connection for all inputs.
-        """
-        for label in self.labels['in']:
-            if label not in dic:
-                raise Exception('Connection dict does not contain all inputs')
+    def __int__(self):
+        sig = 0
+        for i, wire in enumerate(self.wires):
+            sig |= wire.bit << i
+        return sig
 
-        self.terminals = {label:Terminal() for label in inputs + outputs}
-            
-        #sets a bus_len to all variable buses in order to assure their length are the same
-        arbitrary_inputs = [label for label in self.labels if label not in self.bus_rules]
-        len_inputs = len(dic[var_buses[0]])
-        for label in var_inputs:
-            self.bus_rules[label] = len_inputs
-        self._set_bus_lens()
-        
-        for label, bus in dic.items():
-            self.set_bus(label, bus, 'in_bus')
-                
-        updater.subscribe(self, self.get_triggers())
-        self._func_spec()
-
-    def set_bus(self, label, bus, attr):
+    def __add__(self, other):
+        """Combine buses self + other where the most siginifcant bits are 
+        assigned to self. Notice that this operation is not commutative."""
         try:
-            setattr(self.terminals[label], attr, bus)
-        except ValueError:
-            msg = 'Failed connecting bus to label `{}` in circuit {}.' + \
-                'Buses have different lengths'
-            raise ValueError(msg.format(label, self.__name__))
+            wires = other.wires + self.wires 
+            return self._from_wires(wires)
+        except AttributeError:
+            return NotImplemented
 
-    def connect_outputs(self, dic):
-        """ """
-        for label, bus in dic.items():
-            if label not in self.labels['out']:
-                raise Exception('Label is not an output')
-            self.set_bus(label, bus, 'in_bus')
-
-    def get_triggers(self):
-        return [self.terminals[label].in_bus for label in self.labels['in']]
-
-    def outputs(self, label):
-        """Returns out_bus for the terminal associated to label"""
-        return self.terminals[label].out_bus
-    
-    def output(self):
-        """Syntatic sugar for outputs. Useful when circuit has one output
-Returns the out_bus for the first out terminal."""
-        label = self.labels['out'][0]
-        return self.terminals[label].out_bus
-
-    def nodes(self, label):
-        """Return the Bus assosicated to the Terminal 'label' that is interior to the circuit.
-eg, if terminal is an output returns in_bus,
-if terminal is an input returns in_bus"""
-        if label in self.labels['in']:
-            bus = self.terminals[label].out_bus
-        elif label in self.labels['out']:
-            bus = self.terminals[label].in_bus
-        else:
-            raise KeyError('No "{}" label existent'.format(label))
-        return bus
-
-    def update(self):
-        for label in self.labels['in']:
-            self.terminals[label].propagate()
-
-class Gate(Circuit):
-
-    """Base class for the basic logic gates"""
-
-    _ops = {'and':Signal.AND, 'or':Signal.OR, 'xor':Signal.XOR}
-    
-    def __init__(self, operation, connections={}, bubbles=[]):
-        inputs = 'a b'.split()
-        outputs = ['y']
-        self.op = self._ops[operation]
-        super().__init__(inputs, outputs, connections, bubbles)
-
-    def _func_spec():
-        y = Bus(len(self.nodes('a')))
-        self.connect_outputs(self, {'y', y})
+    @property
+    def signal(self):
+        """Returns Signal object for bus"""
+        return Signal(int(self), len(self))
         
-    def update(self):
-        for label in self.labels['in']:
-            self.terminals[label].propagate()
-        a_sig = self.nodes['a'].signal
-        b_sig = self.nodes['b'].signal
-        result = self.op(a_sig, b_sig)
-        self.nodes['y'].signal = result
-        self.terminals['y'].propagate()
+    @signal.setter
+    def signal(self, value):
+        """Assigns a new Signal to the bus and notifies the updater"""
+        #should I check for other types of value? What if user gives a string?
+        #should I handle that here or at signal?
+        if type(value) == Signal:
+            bits = value.to_bits()
+        else:
+            bits = Signal(value, len(self)).to_bits()
+        for wire, bit in zip(self.wires, bits):
+            wire.bit = bit
+        event = self.BusEvent(self)
+        updater.notify(event)
+            
+    @classmethod
+    def _from_wires(cls, wires):
+        """Init bus from a sequence of wires"""
+        bus = Bus(len(wires))
+        bus.wires = wires
+        return bus
+ 
+    
+class Terminal:
+    """
+    Terminals are the door between the outside world and a circuit.
 
+    Terminals are conceptually similar to buffers, its input and output are connected
+    to distinct buses. The terminal reads the input bus' signal and writes 
+    that same signal to the output bus. It's possible to use a Terminal as a NOT
+    gate as well, in which case the output would be the logical negation of the input.
+    The input and output for every circuit Block is a Terminal.
+    Optionally, it is possible to toggle whether the output propagates the signal
+    to the bus or not. If self.connected is tied to GND, then the signal will not propagate
+    this is analogous to being at a High Impedance.
+    """
+    VDD = Bus(1, 1)
+    GND = Bus(1, 0)
 
-class SigGen:
+    def __init__(self, size, a=None, y=None, en=None, bubble=False):
+        self.size = size
+        self._a = None
+        self._y = None
+        self._en = None
+        self.bubble = bubble
+        self.a = a
+        self.y = y
+        self.en = en if en else self.VDD
 
-    """A Signal Generator object interacts with a bus and sends signals to it."""
+    def setter(self, attr, value, size):
+        """DRY for setter methods. attr is a string, value is a Bus object.
+        Checks that value is of type Bus and sets the attr"""
+        if not value:
+            return
+        if type(value) is not Bus:
+            raise TypeError
+        elif len(value) != size:
+            raise ValueError
+        else:
+            setattr(self, '_'+attr, value)
 
-    pass
+    @property
+    def a(self):
+        return self._a
 
+    @a.setter
+    def a(self, value):
+        self.setter('a', value, self.size)
 
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        self.setter('y', value, self.size)
+
+    @property
+    def en(self):
+        return self._en
+
+    @en.setter
+    def en(self, value):
+        self.setter('en', value, self.size)
+
+    def propagate(self):
+        """Transmit the signal from the in_bus to the out bus if Bus is connected"""
+        sig = self.a.signal
+        if self.en == self.VDD:
+            self.y.signal = sig if not self.bubble else sig.complement()

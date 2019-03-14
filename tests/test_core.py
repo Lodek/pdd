@@ -1,6 +1,15 @@
 import unittest, logging
 from collections import namedtuple
-from core import Signal, Updater
+from core import Signal, Updater, Wire
+
+class TestWire(unittest.TestCase):
+
+    def test_wire(self):
+        w = Wire()
+        self.assertEqual(w.bit, 0)
+        w = Wire(1)
+        self.assertEqual(w.bit, 1)
+
 
 class TestSignal(unittest.TestCase):
 
@@ -19,10 +28,10 @@ class TestSignal(unittest.TestCase):
         self.assertEqual(b, c)
         
     def test_consistency(self):
-        bits_to_int = lambda signal : int(''.join([str(bit) for bit in signal.to_bits()]), 2)
+        bits_to_int = lambda signal : int(''.join(reversed([str(bit) for bit in signal.to_bits()])), 2)
         signals = self.setUp()
         for signal in signals:
-            self.assertEqual(signal.data, bits_to_int(signal))
+            self.assertEqual(signal.value, bits_to_int(signal))
 
     def test_operations(self):
         a = Signal(0b0101, 4)
@@ -39,18 +48,19 @@ class mockCircuit:
         self.c = c
 
     def update(self):
-        self.c.setter(self.a.data + self.b.data)
+        self.c.setter(self.a.value + self.b.value)
     
 class mockBus:
 
     Event = namedtuple('Event', ('bus'))
     updater = None
     
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, value, size=1):
+        self.value = value
+        self.size = size
         
-    def setter(self, data):
-        self.data = data
+    def setter(self, value):
+        self.value = value
         self.updater.notify(self.Event(self))
 
 class testUpdate(unittest.TestCase):
@@ -72,8 +82,9 @@ class testUpdate(unittest.TestCase):
         self.ba.setter(10)
         self.assertEqual(len(self.updater.events), 1)
         self.updater.handle_events()
-        self.assertEqual(self.bc.data, 15)
+        self.assertEqual(self.bc.value, 15)
         
+       
 if __name__ == '__main__':
     logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)
     unittest.main()

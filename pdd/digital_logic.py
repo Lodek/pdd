@@ -4,18 +4,7 @@ import logging
 
 updater = Updater() #module wide declartion of Updater
 logger = logging.getLogger(__name__)
-
-class Wire:
-    """
-    Wire carries a bit of data
-    """
-    def __init__(self, value=0):
-        self.bit = value
-
-    def __repr__(self):
-        return 'Wire({})'.format(self.bit)
-
-
+       
     
 class Bus:
     """
@@ -34,8 +23,9 @@ class Bus:
         logger.debug("New {}".format(repr(self)))
 
     def __repr__(self):
-        return 'Bus({}, n={})'.format(self.signal, len(self))
-
+        s = '{}: signal={}; len={};'
+        return s.format(self.__class__, self.signal, len(self))
+        
     def __len__(self):
         return len(self.wires)
 
@@ -70,7 +60,7 @@ class Bus:
         
     @signal.setter
     def signal(self, value):
-        """ Assigns a new Signal to the bus and notifies the updater"""
+        """Assigns a new Signal to the bus and notifies the updater"""
         if type(value) == Signal:
             bits = value.to_bits()
         else:
@@ -101,33 +91,56 @@ class Terminal:
     this is analogous to being at a High Impedance.
     """
     VDD = Bus(1, 1)
-    GND = Bus()
+    GND = Bus(1, 0)
 
-    def __init__(self, in_bus=None, bus_len=0, enable=None, invert=False):
-        self._in_bus = None
-        self.out_bus = Bus()
-        self.bus_len = bus_len
-        self.invert = invert
-        if in_bus:
-            self.in_bus = in_bus
-        if not enable:
-            self.enable = self.VDD
+    def __init__(self, size, a=None, y=None, en=None, bubble=False):
+        self.size = size
+        self._a = None
+        self._y = None
+        self._en = None
+        self.bubble = bubble
+        self.a = a
+        self.b = b
+        self.en = en
+
+    def setter(self, attr, value, size):
+        """DRY for setter methods. attr is a string, value is a Bus object.
+        Checks that value is of type Bus and sets the attr"""
+        if not value:
+            return
+        if type(value) is not Bus:
+            raise TypeError
+        elif len(value) != size
+            raise ValueError
         else:
-            self.enable = enable
+            setattr(self, attr, value)
 
     @property
-    def in_bus(self):
-        return self._in_bus
+    def a(self):
+        return self._a
 
-    @in_bus.setter
-    def in_bus(self, bus):
-        if len(bus) != self.bus_len and self.bus_len != 0:
-            raise ValueError("Bus size incompatible with requirements")
-        self._in_bus = bus
-        self.out_bus.extend(len(bus))
-        
+    @a.setter
+    def a(self, value):
+        self.setter('a', value, self.size)
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        self.setter('y', value, self.size)
+
+    @property
+    def en(self):
+        return self._en
+
+    @en.setter
+    def en(self, value):
+        self.setter('en', value, self.size)
+
     def propagate(self):
         """Transmit the signal from the in_bus to the out bus if Bus is connected"""
-        in_sig = self.in_bus.signal
+        sig = self.a.signal
         if self.enable == self.VDD:
-            self.out_bus.signal = in_sig if not self.invert else in_sig.complement()
+            self.y.signal = sig if not self.bubble else sig.complement()
