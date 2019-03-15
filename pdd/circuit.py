@@ -35,6 +35,7 @@ class BaseCircuit:
             self.set_bubles(**{label : True for label in bubbles})
 
         self.connect(**kwargs)
+        self.make()
 
     def output(self, label=''):
         """Return Bus output bus attached to terminal `label`. If no label is given
@@ -54,11 +55,13 @@ class BaseCircuit:
                 self.terminals[label] = Terminal(a=bus)
             elif label in self.output_labels:
                 self.terminals[label] = Terminal(y=bus)
-        missing = [self.terminals[label].a for label in self.input_labels]
-        if None not in missing:
-            self.make()
-            self.updater.subscribe(self, self.get_inputs())
+        self.update_triggers()
 
+    def update_triggers(self):
+        """Update the trigger Buses in the observer object"""
+        self.updater.unsubscribe(self, self.get_inputs())
+        self.updater.subscribe(self, self.get_inputs())
+        
 
     def make(self):
         """Make must be implemented by subclasses. The body of make contain the
