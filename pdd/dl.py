@@ -2,7 +2,6 @@ from collections import namedtuple
 from core import Updater, Signal, Wire
 import logging
 
-updater = Updater() #module wide declartion of Updater
 logger = logging.getLogger(__name__)
        
 class Bus:
@@ -15,6 +14,7 @@ class Bus:
     their signals are equal
     """
     BusEvent = namedtuple('BusEvent', ('signal'))
+    updater = None
 
     def __init__(self, n=1, signal=0):
         self.wires = [Wire() for _ in range(n)]
@@ -70,7 +70,7 @@ class Bus:
         for wire, bit in zip(self.wires, bits):
             wire.bit = bit
         event = self.BusEvent(self)
-        updater.notify(event)
+        self.updater.notify(event)
             
     @classmethod
     def _from_wires(cls, wires):
@@ -102,15 +102,13 @@ class Terminal:
         self._y = None
         self._en = None
         self.bubble = bubble
-        self.a = a
-        self.y = y
+        self.a = a if a else Bus(size)
+        self.y = y if y else Bus(size)
         self.en = en if en else self.VDD
 
     def setter(self, attr, value, size):
         """DRY for setter methods. attr is a string, value is a Bus object.
         Checks that value is of type Bus and sets the attr"""
-        if not value:
-            return
         if type(value) is not Bus:
             raise TypeError
         elif len(value) != size:

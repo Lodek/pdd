@@ -1,0 +1,59 @@
+
+circuit.py,304
+class BaseCircuit:BaseCircuit3,36
+    def __init__(14,426
+    def output(38,1365
+    def outputs(45,1622
+    def connect(50,1823
+    def make(62,2292
+    def get_inputs(68,2567
+    def set_outputs(75,2973
+    def set_bubbles(84,3375
+    def update(91,3669
+    def namedtuple_factory(100,4053
+
+core.py,534
+class Wire:Wire8,265
+    def __init__(12,328
+    def __repr__(15,383
+class Signal:Signal20,486
+    def __init__(27,831
+    def to_bits(38,1196
+    def __len__(44,1482
+    def __eq__(47,1531
+    def __repr__(50,1602
+    def __str__(54,1720
+    def complement(57,1775
+    def NOT(61,1855
+    def OR(69,2036
+    def AND(74,2145
+    def XOR(79,2255
+class Updater:Updater83,2348
+    def __init__(96,2939
+    def subscribe(102,3130
+    def unsubscribe(108,3394
+    def notify(117,3754
+    def handle_events(122,3955
+
+dl.py,508
+class Bus:Bus7,135
+    def __init__(19,619
+    def __repr__(24,769
+    def __len__(28,903
+    def __getitem__(31,958
+    def __eq__(38,1196
+    def __int__(41,1292
+    def __add__(47,1430
+    def signal(57,1793
+    def signal(62,1931
+    def _from_wires(76,2472
+class Terminal:Terminal83,2635
+    def __init__(99,3397
+    def setter(109,3670
+    def a(122,4087
+    def a(126,4142
+    def y(130,4224
+    def y(134,4279
+    def en(138,4361
+    def en(142,4419
+    def propagate(145,4489

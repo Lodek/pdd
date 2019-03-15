@@ -2,13 +2,20 @@ from collections import namedtuple
 
 class BaseCircuit:
     """
-
+    Accepted kwargs:
+    size: size of the data carrying Bus in the circuit
+    bubbles: Sequence with labels for terminals whose bubble should be set
+    labels (eg 'a', 'y'): Bus that will be connected to the circuit's terminals
+    
+    Either a data carrying Bus or size must be part of kwargs otherwise an Exception is raised
+    
     """
+    updater = None
     def __init__(self, **kwargs):
         #self.input_labels = []
         #self.output_labels = []
         #self.sizes = {} change me
-
+        
         #Logic that ensures size of circuit is defined. Makes the whole thing easier
         self.labels = input_labels + output_labels
         if 'size' in kwargs:
@@ -18,16 +25,15 @@ class BaseCircuit:
             try:
                 size = len(buses[0])
             except IndexError:
+                #maybe set size to 1 instead of raising an error?
                 raise Exception("Need a bus or size!")
         d = {label : size for label in self.labels if label not in self.sizes}
         self.sizes.update(d)
-            
-        if bubbles in kwargs:
-            self.bubbles = {label : True for label in bubbles}
-        else:
-            self.bubbles = {}
-
         self.terminals = {label : Terminal(size) for label, size in self.sizes.items()}
+
+        if bubbles in kwargs:
+            self.set_bubles(**{label : True for label in bubbles})
+
         self.connect(**kwargs)
 
     def output(self, label=''):
@@ -43,15 +49,16 @@ class BaseCircuit:
         return [self.terminals[label].b for label in args]
 
     def connect(self, **kwargs):
-        for key, value in kwargs.items():
-            if key in self.input_labels:
-                self.terminals[key] = Terminal(a=value)
-            elif key in self.output_labels:
-                self.terminals[key] = Terminal(y=value)
+        for label, bus in kwargs.items():
+            if label in self.input_labels:
+                self.terminals[label] = Terminal(a=bus)
+            elif label in self.output_labels:
+                self.terminals[label] = Terminal(y=bus)
         missing = [self.terminals[label].a for label in self.input_labels]
         if None not in missing:
-            self.set_bubbles(**self.bubbles)
             self.make()
+            self.updater.subscribe(self, self.get_inputs())
+
 
     def make(self):
         """Make must be implemented by subclasses. The body of make contain the
@@ -93,6 +100,6 @@ class BaseCircuit:
     @staticmethod
     def namedtuple_factory(name, dict):
         """Factory method for namedtuples. Create a nametuple factory and
-        return the an instance of the object initialized to the values in dict"""
+        return an instance of the factory initialized to the values in dict"""
         factory = namedtuple(name, list(dict.keys()))
         return factory(**dict)

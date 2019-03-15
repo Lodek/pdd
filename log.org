@@ -116,3 +116,7 @@ class Multiplexer(BaseCircuit):
 - Who should check that 'a' and 'y' of terminal are equally sized busses? I feel like terminal should. Yeah, otherwise it breaks encapsulation. Circuit can make the calls to check but terminal should do the checking
 - Should the bus lengths of a circuit be specified at init? That could solve a lot of problems but it's really ugly. yes, yes it should. I'm trying to abstract things but a 2 bit adder is not the same as a 8-bit adder. Circuits shouldn't be multable like that. I could do some magic so the user doesn't have to input things manually but a circuit should not mutate. An 8 bit circuit is 8 bit for all it's lifetime.
 - Okay, I think that solves 2 big issues that I had, really.
+* Notes
+** Context manager for make
+** base circuit references to created circuits (prevent garbage collection)
+** Terminal should instantiate with Buses. All of them
