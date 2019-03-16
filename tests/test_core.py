@@ -81,7 +81,7 @@ class testUpdate(unittest.TestCase):
     def test_updater(self):
         self.ba.setter(10)
         self.assertEqual(len(self.updater.events), 1)
-        self.updater.handle_events()
+        self.updater.update()
         self.assertEqual(self.bc.value, 15)
         
        

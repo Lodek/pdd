@@ -15,8 +15,9 @@ class Bus:
     Bus value is given by Signal which gives a higher level API. Two Bus are equal if
     their signals are equal
     """
-    BusEvent = namedtuple('BusEvent', ('signal'))
+    BusEvent = namedtuple('BusEvent', ('bus'))
     updater = u
+    auto_update = False
 
     def __init__(self, n=1, signal=0):
         self.wires = [Wire() for _ in range(n)]
@@ -73,6 +74,8 @@ class Bus:
             wire.bit = bit
         event = self.BusEvent(self)
         self.updater.notify(event)
+        if self.auto_update and not self.updater.updating:
+            self.updater.update()
             
     @classmethod
     def _from_wires(cls, wires):

@@ -96,8 +96,10 @@ class Updater:
     def __init__(self, threshold=2**20):
         logger.info('Updater object created')
         self.threshold = threshold
+        self.updating = False
         self.events = []
         self.relations = defaultdict(list)
+
 
     def subscribe(self, circuit, buses):
         """`circuit` is notified of any changes made to bus in `buses`."""
@@ -119,7 +121,7 @@ class Updater:
         logger.debug('New Updater event: ' + repr(event))
         self.events.append(event)
         
-    def handle_events(self):
+    def update(self):
         """Handle all events from this cycle until list is empty or threshold blows up.
 
         Handle all events in self.events. Events are handled in a FIFO manner
@@ -128,7 +130,9 @@ class Updater:
         If the number of events in the cycle exceed threshold, raises a Runtime error
         with the last circuits handled.
         """
+        #should change to a Breadth first algorithm
         logger.info('Handling events')
+        self.updating = True
         deque_len = 50
         last = deque([None]*deque_len, maxlen=deque_len)
         for i in range(self.threshold):
@@ -140,8 +144,10 @@ class Updater:
                     logger.debug('updating circuit {}'.format(circuit))
                     circuit.update()
             except IndexError:
+                self.updating = False
                 break
         else:
+            self.updating = False
             error_str = 'Update threshold blew up; check for cyclic path.'
             error = RuntimeError(error_str, last)
             raise error
