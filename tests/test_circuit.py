@@ -95,13 +95,19 @@ class TestBaseCircuit(unittest.TestCase):
         obj = self.obj_bus()
         obj.terminals['y'].y.signal = 15
         y = Bus(4, 15)
-        self.assertEqual(obj.get_output(), y)
+        self.assertEqual(obj.output(), y)
 
     def test_get_outputs(self): 
         obj = self.obj_bus()
         obj.terminals['y'].y.signal = 15
         y = [Bus(4, 15)]
         self.assertEqual(obj.outputs('y'), y)
+
+    def test_update_attributes(self):
+        """Test the attributes in circuit corresponding to the external buses"""
+        obj = self.obj_bus()
+        self.assertEqual(obj.a, self.a)
+        self.assertEqual(obj.b, self.b)
 
 if __name__ == '__main__':
     logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)

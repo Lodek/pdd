@@ -209,8 +209,8 @@ class BaseCircuit:
         """Return Bus output bus attached to terminal `label`. If no label is given
         return the Bus of first output"""
         if not label:
-            label = output_labels[0]
-        return self.terminals[label].b
+            label = self.output_labels[0]
+        return self.terminals[label].y
 
     def outputs(self, *args):
         """Return list with output Buses attached to terminals in args"""
@@ -224,6 +224,7 @@ class BaseCircuit:
             elif label in self.output_labels:
                 self.terminals[label].y = bus
         self.update_triggers()
+        self.update_attributes()
 
     def update_triggers(self):
         """Update the trigger Buses in the observer object"""
@@ -275,4 +276,8 @@ class BaseCircuit:
         factory = namedtuple(name, list(dict.keys()))
         return factory(**dict)
 
-
+    def update_attributes(self):
+        for label in self.input_labels:
+            setattr(self, label, self.terminals[label].a)
+        for label in self.output_labels:
+            setattr(self, label, self.terminals[label].y)
