@@ -205,6 +205,13 @@ class BaseCircuit:
         self.connect(**kwargs)
         self.make()
 
+    def __repr__(self):
+        s = '{}: '.format(self.__class__)
+        i = ['{}={}; '.format(label, repr(self.terminals[label].a.signal)) for label in self.input_labels]
+        o = ['{}={}; '.format(label, repr(self.terminals[label].y.signal)) for label in self.output_labels]
+        s = s + ''.join(i) + ''.join(o)
+        return s
+        
     def output(self, label=''):
         """Return Bus output bus attached to terminal `label`. If no label is given
         return the Bus of first output"""
@@ -228,8 +235,9 @@ class BaseCircuit:
 
     def update_triggers(self):
         """Update the trigger Buses in the observer object"""
-        self.updater.unsubscribe(self, self.get_inputs())
-        self.updater.subscribe(self, self.get_inputs())
+        triggers = [self.terminals[label].a for label in self.input_labels]
+        self.updater.unsubscribe(self, triggers)
+        self.updater.subscribe(self, triggers)
         
 
     def make(self):

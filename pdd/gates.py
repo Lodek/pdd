@@ -1,14 +1,8 @@
-from blocks import Gate
+"""Module defines redefines AND, OR and XOR gates from blocks.py. It's meant to 
+be used through "from gates import *" to explocity and easily import logic gates."""
 
-def AND(**kwargs):
-    """Factory for Logic AND gate"""
-    return Gate(op=Gate.AND, **kwargs)
+import blocks
 
-def XOR(**kwargs):
-    """Factory for Logic XOR gate"""
-    return Gate(op=Gate.XOR, **kwargs)
-
-def OR(**kwargs):
-    """Factory for Logic OR gate"""
-    return Gate(op=Gate.OR, **kwargs)
- 
+AND = blocks.AND
+OR = blocks.OR
+XOR = blocks.XOR
