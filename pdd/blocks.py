@@ -37,16 +37,26 @@ def OR(**kwargs):
     """Factory for Logic OR gate"""
     return Gate(op=Gate.OR, **kwargs)
  
-class HalfAdder(BaseCircuit):
-
+class Multiplexer(BaseCircuit):
+    """
+    Basic 2:1 multiplexer. 
+    inputs: s, d0, d1
+    outputs: y
+    d0 when s=0
+    d1 when s=1
+    """
     def __init__(self, **kwargs):
-        self.input_labels = 'a b'.split()
-        self.output_labels = 'cout s'.split()
+        self.input_labels = 's d0 d1'.split()
+        self.output_labels = ['y']
         super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
-        g1 = XOR(a=i.a, b=i.b)
-        g2 = AND(a=i.a, b=i.b)
-        self.set_outputs(cout=g2.y, s=g1.y)
+        #Eqt for d0_and = d0~s
+        d0_and = AND(a=i.d0, b=i.s, bubbles=['b'])
+        #Eqt for d0_and = d1s
+        d1_and = AND(a=i.d1, b=i.s)
+        select_or = OR(a=d0_and.y, b=d1_and.y)
+        self.set_outputs(y=select_or.y)
+
         

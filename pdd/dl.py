@@ -207,8 +207,8 @@ class BaseCircuit:
 
     def __repr__(self):
         s = '{}: '.format(self.__class__)
-        i = ['{}={}; '.format(label, repr(self.terminals[label].a.signal)) for label in self.input_labels]
-        o = ['{}={}; '.format(label, repr(self.terminals[label].y.signal)) for label in self.output_labels]
+        i = ['{}={}; '.format(label, str(self.terminals[label].a.signal)) for label in self.input_labels]
+        o = ['{}={}; '.format(label, str(self.terminals[label].y.signal)) for label in self.output_labels]
         s = s + ''.join(i) + ''.join(o)
         return s
         

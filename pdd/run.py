@@ -4,3 +4,6 @@ from gates import *
 import blocks
 from dl import Bus
 
+u = Bus.updater
+Bus.auto_update = True
+
