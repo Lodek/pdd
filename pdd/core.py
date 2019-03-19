@@ -93,7 +93,7 @@ class Updater:
     of calls per cycle in order to avoid deadlocks caused by improper circuits
     (e.g. unstable circuits or circuits with cyclic paths)
     """
-    def __init__(self, threshold=2**20):
+    def __init__(self, threshold=2**10):
         logger.info('Updater object created')
         self.threshold = threshold
         self.updating = False
@@ -138,14 +138,14 @@ class Updater:
         for i in range(self.threshold):
             try:
                 event = self.events.pop(0)
-                logger.debug('Handling event {}'.format(event))
-                for circuit in self.relations[id(event.bus)]:
-                    last.append(circuit)
-                    logger.debug('updating circuit {}'.format(circuit))
-                    circuit.update()
             except IndexError:
                 self.updating = False
                 break
+            logger.debug('Handling event {}'.format(event))
+            for circuit in self.relations[id(event.bus)]:
+                last.append(circuit)
+                logger.debug('updating circuit {}'.format(circuit))
+                circuit.update()
         else:
             self.updating = False
             error_str = 'Update threshold blew up; check for cyclic path.'
