@@ -20,6 +20,8 @@ class Bus:
     auto_update = False
 
     def __init__(self, n=1, signal=0):
+        if n <= 0:
+            raise ValueError('Bus size must be > 0')
         self.wires = [Wire() for _ in range(n)]
         self.signal = signal
         logger.debug(repr(self))
@@ -56,6 +58,13 @@ class Bus:
         except AttributeError:
             return NotImplemented
 
+    def branch(self, n):
+        """Branches a Bus into a Bus of length n. Assume Bus is of length 1"""
+        wire = self.wires[0]
+        wires = [wire] * n
+        return self._from_wires(wires)
+
+
     @property
     def signal(self):
         """Returns Signal object for bus"""
@@ -66,6 +75,12 @@ class Bus:
         """Assigns a new Signal to the bus and notifies the updater"""
         #should I check for other types of value? What if user gives a string?
         #should I handle that here or at signal?
+        try:
+            v = value.value
+        except AttributeError:
+            v = value
+        if v == self.signal.value:
+            return
         if type(value) == Signal:
             bits = value.to_bits()
         else:
@@ -176,7 +191,7 @@ class BaseCircuit:
     def __init__(self, **kwargs):
         #self.input_labels = []
         #self.output_labels = []
-        #self.sizes = {} change me
+        self.triggers = []
         try:
             if not type(self.sizes) is dict:
                 #????????????????
@@ -185,17 +200,17 @@ class BaseCircuit:
             self.sizes = {}
         
         #Logic that ensures size of circuit is defined. Makes the whole thing easier
-        self.labels = self.input_labels + self.output_labels
+        labels = self.input_labels + self.output_labels
         if 'size' in kwargs:
             size = kwargs['size']
         else:
-            buses = [kwargs[label] for label in self.labels if label not in self.sizes and label in kwargs]
+            buses = [kwargs[label] for label in labels if label not in self.sizes and label in kwargs]
             try:
                 size = len(buses[0])
             except IndexError:
                 #maybe set size to 1 instead of raising an error?
                 raise Exception("Need a bus or size!")
-        d = {label : size for label in self.labels if label not in self.sizes}
+        d = {label : size for label in labels if label not in self.sizes}
         self.sizes.update(d)
         self.terminals = {label : Terminal(size) for label, size in self.sizes.items()}
 
@@ -235,9 +250,9 @@ class BaseCircuit:
 
     def update_triggers(self):
         """Update the trigger Buses in the observer object"""
-        triggers = [self.terminals[label].a for label in self.input_labels]
-        self.updater.unsubscribe(self, triggers)
-        self.updater.subscribe(self, triggers)
+        self.updater.unsubscribe(self, self.triggers)
+        self.triggers = [terminal.a for terminal in self.terminals.values()]
+        self.updater.subscribe(self, self.triggers)
         
 
     def make(self):
@@ -274,8 +289,8 @@ class BaseCircuit:
         of a wire in a digital circuit changes the circuit output changes.
         update should - under normal circumstances be called by the Updater
         object automatically"""
-        for label in self.input_labels:
-            self.terminals[label].propagate()
+        for terminal in self.terminals.values():
+            terminal.propagate()
 
     @staticmethod
     def namedtuple_factory(name, dict):

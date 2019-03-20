@@ -30,6 +30,13 @@ class TestBus(unittest.TestCase):
         c = a + b
         self.assertEqual(c.signal.value, 2)
 
+    def test_branch(self):
+        a = Bus(1)
+        branched_a = a.branch(4)
+        self.assertEqual(len(branched_a), 4)
+        self.assertEqual(branched_a.signal, Signal(0, 4))
+        a.signal = 1
+        self.assertEqual(branched_a.signal, Signal(2**4-1, 4))
 
 class TestTerminal(unittest.TestCase):
     def setUp(self):
