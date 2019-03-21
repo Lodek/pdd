@@ -2,14 +2,27 @@ import unittest, logging
 from collections import namedtuple
 from core import Signal, Updater, Wire
 
+class mockUpdater:
+    events = []
+    def notify(self, event):
+        self.events.append(event)
+
 class TestWire(unittest.TestCase):
 
+    def setUp(self):
+        Wire.updater = mockUpdater()
+    
     def test_wire(self):
         w = Wire()
         self.assertEqual(w.bit, 0)
         w = Wire(1)
         self.assertEqual(w.bit, 1)
 
+    def test_event(self):
+        w = Wire()
+        w.bit = 1
+        self.assertTrue(w.updater.events != [])
+        
 
 class TestSignal(unittest.TestCase):
 
@@ -40,49 +53,42 @@ class TestSignal(unittest.TestCase):
         self.assertEqual(Signal.AND(a, b), Signal(0b0000, 4))
         self.assertEqual(Signal.XOR(a, b), Signal(0b1111, 4))
         
-
 class mockCircuit:
-    def __init__(self, a, b, c):
-        self.a = a
-        self.b = b
-        self.c = c
-
+    updated = False
     def update(self):
-        self.c.setter(self.a.value + self.b.value)
-    
-class mockBus:
-
-    Event = namedtuple('Event', ('bus'))
-    updater = None
-    
-    def __init__(self, value, size=1):
-        self.value = value
-        self.size = size
-        
-    def setter(self, value):
-        self.value = value
-        self.updater.notify(self.Event(self))
+        self.updated = True
 
 class testUpdate(unittest.TestCase):
-
     def setUp(self):
-        updater = Updater()
-        mockBus.updater = updater
-        ba = mockBus(3)
-        bb = mockBus(5)
-        bc = mockBus(0)
-        circ_a = mockCircuit(ba, bb, bc)
-        updater.subscribe(circ_a, (ba, bb))
-        self.ba = ba
-        self.bb = bb
-        self.bc = bc
-        self.updater = updater
+        self.updater = Updater()
+        Wire.updater = self.updater
+        self.w1 = Wire()
+        self.w2 = Wire()
+        self.circ_a = mockCircuit()
+        self.updater.events = [] #erases useless updates from init
+        self.updater.subscribe(self.circ_a, (self.w1, self.w2))
 
-    def test_updater(self):
-        self.ba.setter(10)
-        self.assertEqual(len(self.updater.events), 1)
+    def test_subscribe(self):
+        """Test Updater.subscribe method"""
+        self.assertTrue(id(self.w1) in self.updater.relations)
+        self.assertTrue(id(self.w2) in self.updater.relations)
+
+    def test_unsubsribe(self):
+        """Test Updater.unsubscribe method"""
+        self.updater.unsubscribe(self.circ_a, (self.w1, self.w2))
+        self.assertTrue(self.circ_a not in self.updater.relations.values())
+
+    def test_update(self):
+        self.assertFalse(self.updater.events)
+        self.assertFalse(self.circ_a.updated)
+
+        self.w1.bit = 1
+        self.assertTrue(len(self.updater.events), 1)
         self.updater.update()
-        self.assertEqual(self.bc.value, 15)
+        self.assertTrue(self.circ_a.updated)
+
+
+
         
        
 if __name__ == '__main__':
