@@ -37,6 +37,8 @@ def OR(**kwargs):
     """Factory for Logic OR gate"""
     return Gate(op=Gate.OR, **kwargs)
  
+
+
 class Multiplexer(BaseCircuit):
     """
     Basic 2:1 multiplexer. 
@@ -48,15 +50,54 @@ class Multiplexer(BaseCircuit):
     def __init__(self, **kwargs):
         self.input_labels = 's d0 d1'.split()
         self.output_labels = ['y']
+        self.sizes = {'s' : 1}
         super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
         #Eqt for d0_and = d0~s
-        d0_and = AND(a=i.d0, b=i.s, bubbles=['b'])
+        branched_s = i.s.branch(len(i.d0))
+        d0_and = AND(a=i.d0, b=branched_s, bubbles=['b'])
         #Eqt for d0_and = d1s
-        d1_and = AND(a=i.d1, b=i.s)
+        d1_and = AND(a=i.d1, b=branched_s)
         select_or = OR(a=d0_and.y, b=d1_and.y)
         self.set_outputs(y=select_or.y)
 
         
+
+class nMultiplexer(BaseCircuit):
+    """
+    Multiplexer circuit with n select lines
+    """
+    def __init__(self, select_len, **kwargs):
+        self.input_labels = ['d{}'.format(i) for i in range(select_len**2)] + ['s'] 
+        self.output_labels = ['y']
+        if not select_len > 1:
+            raise ValueError("select_len must be > 1")
+        self.sizes = {'s': select_len}
+        self.select_len = select_len
+        super().__init__(**kwargs)
+
+    def make(self):
+        #this be confuse, I thought it would be much simpler
+        #Harris pg 85 for diagream on hierarchical n-select multiplexer implementation
+        i = self.get_inputs()
+
+        #initialize multiplexers
+        #formula gives number of multiplexers at any given lvl
+        muxes_by_lvl = lambda lvl: int((2**self.select_len)/(2*(lvl+1)))
+        gen_muxes = lambda n : [Multiplexer(d0=i.d0) for _ in range(n)]
+        levels = [gen_muxes(muxes_by_lvl(i)) for i in range(self.select_len)]
+        #connect muxes at lvl 0
+        #i is a namedtuple and by input_labels order select line is the last element in the tuple
+        #so it gets skipped
+        data_lines = [(even, odd) for even, odd in zip(i[:-1:2], i[1:-1:2])] 
+        for mux, pair in zip(levels[0], data_lines):
+            mux.connect(d0=pair[0], d1=pair[1], s=i.s[0])
+        #connect rest of the lvls
+        for i in range(1, self.select_len):
+            data_lines = [(even.y, odd.y) for even, odd in zip(levels[i-1][::2], levels[i-1][1::2])]
+            for mux, pair in zip(levels[i], data_lines):
+                mux.connect(d0=pair[0], d1=pair[1])
+        #get output from last mux and sets to circuit output
+        self.set_outputs(y=levels[-1][0].y)
