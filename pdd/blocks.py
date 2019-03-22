@@ -11,6 +11,7 @@ class Gate(BaseCircuit):
     AND = Signal.AND
     OR = Signal.OR
     XOR = Signal.XOR
+    gate_type = {Signal.OR : 'OR', Signal.AND : 'AND', Signal.XOR : 'XOR'}
     def __init__(self, op, **kwargs):
         self.input_labels = 'a b'.split()
         self.output_labels = ['y']
@@ -25,6 +26,12 @@ class Gate(BaseCircuit):
         self.terminals['y'].a.signal = out
         self.terminals['y'].propagate() 
 
+    def __repr__(self):
+        i = ['{}={}; '.format(label, str(self.terminals[label].a.signal)) for label in self.input_labels]
+        o = ['{}={}; '.format(label, str(self.terminals[label].y.signal)) for label in self.output_labels]
+        s = 'Gate {}: ' + ''.join(i) + ''.join(o)
+        return s.format(self.gate_type[self.op])
+              
 def AND(**kwargs):
     """Factory for Logic AND gate"""
     return Gate(op=Gate.AND, **kwargs)
