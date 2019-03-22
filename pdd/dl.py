@@ -129,7 +129,7 @@ class Terminal:
         self.y = y if y else Bus(size)
         self.en = en if en else self.VDD
 
-    def setter(self, attr, value, size):
+    def _setter(self, attr, value, size):
         """DRY for setter methods. attr is a string, value is a Bus object.
         Checks that value is of type Bus and sets the attr"""
         if type(value) is not Bus:
@@ -137,37 +137,22 @@ class Terminal:
         elif len(value) != size:
             raise ValueError
         else:
-            setattr(self, '_'+attr, value)
+            self.__dict__['_'+attr] = value
 
-    @property
-    def a(self):
-        return self._a
+    def _getter(self, attr):
+        """DRY for getter method"""
+        return self.__dict__['_'+attr]
 
-    @a.setter
-    def a(self, value):
-        self.setter('a', value, self.size)
-
-    @property
-    def y(self):
-        return self._y
-
-    @y.setter
-    def y(self, value):
-        self.setter('y', value, self.size)
-
-    @property
-    def en(self):
-        return self._en
-
-    @en.setter
-    def en(self, value):
-        self.setter('en', value, 1) 
+    a = property(lambda self: self._getter('a'), lambda self, x : self._setter('a', x, self.size))
+    y = property(lambda self : self._getter('y'), lambda self, x : self._setter('y', x, self.size))
+    en = property(lambda self: self._getter('en'), lambda self, x : self._setter('en', x, 1))
 
     def propagate(self):
         """Transmit the signal from the in_bus to the out bus if Bus is connected"""
         sig = self.a.signal
         if self.en == self.VDD:
             self.y.signal = sig if not self.bubble else sig.complement()
+
 
 class BaseCircuit:
     """
@@ -177,7 +162,6 @@ class BaseCircuit:
     labels (eg 'a', 'y'): Bus that will be connected to the circuit's terminals
     
     Either a data carrying Bus or size must be part of kwargs otherwise an Exception is raised
-    
     """
     updater = u
     def __init__(self, **kwargs):
@@ -269,6 +253,7 @@ class BaseCircuit:
         for label, bus in kwargs.items():
             if label in self.output_labels:
                 self.terminals[label].a = bus 
+        self.update_triggers()
 
     def set_bubbles(self, **kwargs):
         """Set bubbles in terminals present in kwargs.

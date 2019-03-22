@@ -8,3 +8,5 @@ from core import Wire
 u = Wire.updater
 Wire.auto_update = True
 
+def get_mux(n=1):
+    return blocks.Multiplexer(size=n)
