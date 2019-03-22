@@ -88,9 +88,6 @@ class testUpdate(unittest.TestCase):
         self.assertTrue(self.circ_a.updated)
 
 
-
-        
-       
 if __name__ == '__main__':
     logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)
     unittest.main()

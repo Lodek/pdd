@@ -3,7 +3,8 @@
 from gates import *
 import blocks
 from dl import Bus
+from core import Wire
 
-u = Bus.updater
-Bus.auto_update = True
+u = Wire.updater
+Wire.auto_update = True
 

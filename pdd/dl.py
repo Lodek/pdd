@@ -3,8 +3,8 @@ from core import Updater, Signal, Wire
 import logging
 
 logger = logging.getLogger(__name__)
-
 u = Updater()
+Wire.updater = u
        
 class Bus:
     """
@@ -15,10 +15,6 @@ class Bus:
     Bus value is given by Signal which gives a higher level API. Two Bus are equal if
     their signals are equal
     """
-    BusEvent = namedtuple('BusEvent', ('bus'))
-    updater = u
-    auto_update = False
-
     def __init__(self, n=1, signal=0):
         if n <= 0:
             raise ValueError('Bus size must be > 0')
@@ -87,11 +83,7 @@ class Bus:
             bits = Signal(value, len(self)).to_bits()
         for wire, bit in zip(self.wires, bits):
             wire.bit = bit
-        event = self.BusEvent(self)
-        self.updater.notify(event)
-        if self.auto_update and not self.updater.updating:
-            self.updater.update()
-            
+           
     @classmethod
     def _from_wires(cls, wires):
         """Init bus from a sequence of wires"""
@@ -251,7 +243,8 @@ class BaseCircuit:
     def update_triggers(self):
         """Update the trigger Buses in the observer object"""
         self.updater.unsubscribe(self, self.triggers)
-        self.triggers = [terminal.a for terminal in self.terminals.values()]
+        nested_wires = [wire for wire in [terminal.a.wires for terminal in self.terminals.values()]]
+        self.triggers = [wire for wires in nested_wires for wire in wires]
         self.updater.subscribe(self, self.triggers)
         
 

@@ -12,6 +12,10 @@ class Wire:
 
     Wires are immutable therefore they are the correct candidates for event
     generation.
+    
+    Wire must be assigned an instance of Updater before use.
+    If auto_update is True, Wire will call updater.update() every time
+    a set is made
     """
     Event = namedtuple('Event', ('obj'))
     updater = None
@@ -19,10 +23,11 @@ class Wire:
     def __init__(self, bit=0):
         self._bit = 0
         self.bit = bit
+        logger.debug(repr(self))
 
     def __repr__(self):
-        s = '{}: bit={};'
-        return s.format(self.__class__, self.bit)
+        s = '{}: bit={}; id={}'
+        return s.format(self.__class__, self.bit, id(self))
 
     @property
     def bit(self):
@@ -37,10 +42,8 @@ class Wire:
         self.updater.notify(event)
         if self.auto_update and not self.updater.updating:
             self.updater.update()
-
         
-    
- 
+
 class Signal:
     """
     Signal abstracts digital signals and is used to set values on a Bus.
