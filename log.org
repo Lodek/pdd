@@ -120,3 +120,7 @@ class Multiplexer(BaseCircuit):
 ** Context manager for make
 ** base circuit references to created circuits (prevent garbage collection)
 ** Terminal should instantiate with Buses. All of them
+** init circuit with bus size =1 and raise warning
+** possible tree structure for circuits and parents
+** finish setter stuff for signals
+** 

@@ -1,6 +1,6 @@
 from collections import namedtuple
 from core import Updater, Signal, Wire
-import logging
+import warnings, logging
 
 logger = logging.getLogger(__name__)
 u = Updater()
@@ -184,8 +184,8 @@ class BaseCircuit:
             try:
                 size = len(buses[0])
             except IndexError:
-                #maybe set size to 1 instead of raising an error?
-                raise Exception("Need a bus or size!")
+                size = 1
+                warnings.warn('No circuit data size given. Setting it to 1')
         d = {label : size for label in labels if label not in self.sizes}
         self.sizes.update(d)
         self.terminals = {label : Terminal(size) for label, size in self.sizes.items()}
@@ -193,6 +193,7 @@ class BaseCircuit:
         if 'bubbles' in kwargs:
             self.set_bubbles(**{label : True for label in kwargs['bubbles']})
 
+        self.set_attributes()
         self.connect(**kwargs)
         self.make()
 
@@ -222,12 +223,11 @@ class BaseCircuit:
             elif label in self.output_labels:
                 self.terminals[label].y = bus
         self.update_triggers()
-        self.update_attributes()
 
     def update_triggers(self):
         """Update the trigger Buses in the observer object"""
         self.updater.unsubscribe(self, self.triggers)
-        nested_wires = [wire for wire in [terminal.a.wires for terminal in self.terminals.values()]]
+        nested_wires = [terminal.a.wires for terminal in self.terminals.values()]
         self.triggers = [wire for wires in nested_wires for wire in wires]
         self.updater.subscribe(self, self.triggers)
         
@@ -239,6 +239,7 @@ class BaseCircuit:
         pass
 
     def get_inputs(self):
+        #rename this to get_input_nodes or something
         """Return an Input object. Input objects have named attributes for each input
         in self. The value of the attribute is the same as self.terminals[label].y
         Used as syntathic sugar which eases the job of writing make()."""
@@ -277,8 +278,21 @@ class BaseCircuit:
         factory = namedtuple(name, list(dict.keys()))
         return factory(**dict)
 
-    def update_attributes(self):
-        for label in self.input_labels:
-            setattr(self, label, self.terminals[label].a)
-        for label in self.output_labels:
-            setattr(self, label, self.terminals[label].y)
+    def _base_getter_labels(self, label):
+        if label in self.input_labels:
+            return self.terminals[label].a
+        if label in self.output_labels:
+            return self.terminals[label].y
+
+    def _base_setter_labels(self, label, signal):
+        if label in self.input_labels:
+            self.terminals[label].a.signal = signal
+
+    def set_attributes(self):
+        cls = type(self)
+        for label in self.input_labels + self.output_labels:
+            getter = lambda obj, l=label : obj._base_getter_labels(l)
+            setter = lambda obj, signal, l=label : obj._base_setter_labels(l, signal)
+            setattr(cls, label, property(getter, setter))
+        
+            
