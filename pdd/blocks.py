@@ -8,13 +8,13 @@ class Gate(BaseCircuit):
     to implement other logic blocks, it is an edge case because it is THE
     fundamental building block.
     """
+    input_labels = 'a b'.split()
+    output_labels = ['y']
     AND = Signal.AND
     OR = Signal.OR
     XOR = Signal.XOR
     gate_type = {Signal.OR : 'OR', Signal.AND : 'AND', Signal.XOR : 'XOR'}
     def __init__(self, op, **kwargs):
-        self.input_labels = 'a b'.split()
-        self.output_labels = ['y']
         self.op = op
         super().__init__(**kwargs)
 
@@ -46,7 +46,7 @@ def OR(**kwargs):
  
 
 
-class Multiplexer(BaseCircuit):
+class SimpleMux(BaseCircuit):
     """
     Basic 2:1 multiplexer. 
     inputs: s, d0, d1
@@ -72,12 +72,12 @@ class Multiplexer(BaseCircuit):
 
         
 
-class nMultiplexer(BaseCircuit):
+class Mutiplexer(BaseCircuit):
     """
     Multiplexer circuit with n select lines
     """
     def __init__(self, select_len, **kwargs):
-        self.input_labels = ['d{}'.format(i) for i in range(select_len**2)] + ['s'] 
+        self.input_labels = ['d{}'.format(i) for i in range(select_len**2)] + ['s']
         self.output_labels = ['y']
         if not select_len > 1:
             raise ValueError("select_len must be > 1")
@@ -108,3 +108,26 @@ class nMultiplexer(BaseCircuit):
                 mux.connect(d0=pair[0], d1=pair[1])
         #get output from last mux and sets to circuit output
         self.set_outputs(y=levels[-1][0].y)
+
+
+class SimpleDecoder(BaseCircuit):
+    """
+    Simple 2 input, 4 output decoder
+    """
+    input_labels = 'a0 a1'.split()
+    output_labels = 'y0 y1 y2 y3'.split()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+
+        and0 = AND(a=i.a0, b=i.a1, bubbles='a b'.split())
+        and1 = AND(a=i.a0, b=i.a1, bubbles=['b'])
+        and2 = AND(a=i.a0, b=i.a1, bubbles=['a'])
+        and3 = AND(a=i.a0, b=i.a1)
+
+        self.set_outputs(y0=and0.y, y1=and1.y, y2=and2.y, y3=and3.y)
+
+
+        
