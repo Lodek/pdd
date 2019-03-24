@@ -217,18 +217,6 @@ class BaseCircuit:
         s = s + ''.join(i) + ''.join(o)
         return s
         
-    def output(self, label=''):
-        """Return Bus output bus attached to terminal `label`. If no label is given
-        return the Bus of first output"""
-        if not label:
-            label = self.output_labels[0]
-        return self.terminals[label].y
-
-    def outputs(self, *args):
-        """Return list with output Buses attached to terminals in args"""
-        #add logic for invalid label
-        return [self.terminals[label].y for label in args]
-
     def connect(self, **kwargs):
         for label, bus in kwargs.items():
             if label in self.input_labels:
