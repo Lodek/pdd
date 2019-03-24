@@ -60,6 +60,20 @@ class Bus:
         wires = [wire] * n
         return self._from_wires(wires)
 
+    def set(self):
+        """Sets all wires in Bus to 1"""
+        for wire in self.wires:
+            wire.bit = 1
+
+    def reset(self):
+        """Set all wires in Bus to 0"""
+        for wire in self.wires:
+            wire.bit = 0
+
+    def pulse(self):
+        """Consecutive call to set and reset"""
+        self.set()
+        self.reset()
 
     @property
     def signal(self):
