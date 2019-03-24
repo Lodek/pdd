@@ -193,7 +193,6 @@ class BaseCircuit:
         if 'bubbles' in kwargs:
             self.set_bubbles(**{label : True for label in kwargs['bubbles']})
 
-        self.set_attributes()
         self.connect(**kwargs)
         self.make()
 
@@ -278,21 +277,16 @@ class BaseCircuit:
         factory = namedtuple(name, list(dict.keys()))
         return factory(**dict)
 
-    def _base_getter_labels(self, label):
-        if label in self.input_labels:
-            return self.terminals[label].a
-        if label in self.output_labels:
-            return self.terminals[label].y
-
-    def _base_setter_labels(self, label, signal):
-        if label in self.input_labels:
-            self.terminals[label].a.signal = signal
-
-    def set_attributes(self):
-        cls = type(self)
-        for label in self.input_labels + self.output_labels:
-            getter = lambda obj, l=label : obj._base_getter_labels(l)
-            setter = lambda obj, signal, l=label : obj._base_setter_labels(l, signal)
-            setattr(cls, label, property(getter, setter))
+    def __setattr__(self, attr, value):
+        if attr in self.input_labels:
+            self.terminals[attr].a.signal = value
+        else:
+            object.__setattr__(self, attr, value)
         
-            
+    def __getattr__(self, attr):
+        if attr in self.input_labels:
+            return self.terminals[attr].a
+        elif attr in self.output_labels:
+            return self.terminals[attr].y
+        else:
+            object.__getattribute__(self, attr)
