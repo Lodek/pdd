@@ -280,13 +280,17 @@ class BaseCircuit:
         return factory(**dict)
 
     def __setattr__(self, attr, value):
-        if attr in self.input_labels:
+        if attr == 'input_labels':
+            object.__setattr__(self, attr, value)
+        elif attr in self.input_labels:
             self.terminals[attr].a.signal = value
         else:
             object.__setattr__(self, attr, value)
         
     def __getattr__(self, attr):
-        if attr in self.input_labels:
+        if attr == 'input_labels' or attr == 'output_labels':
+            object.__getattribute__(self, attr)
+        elif attr in self.input_labels:
             return self.terminals[attr].a
         elif attr in self.output_labels:
             return self.terminals[attr].y

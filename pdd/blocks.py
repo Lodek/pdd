@@ -31,18 +31,52 @@ class Gate(BaseCircuit):
         o = ['{}={}; '.format(label, str(self.terminals[label].y.signal)) for label in self.output_labels]
         s = 'Gate {}: ' + ''.join(i) + ''.join(o)
         return s.format(self.gate_type[self.op])
-              
-def AND(**kwargs):
+
+class nGate(BaseCircuit):
+    """
+    n inputs logical gates
+    """
+    def __init__(self, inputs, op, **kwargs):
+        self.input_labels = ['a{}'.format(i) for i in range(inputs)]
+        self.output_labels = ['y']
+        self.inputs = inputs
+        self.op = op
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        gates = [Gate(self.op, size=len(i.a0)) for _ in range(self.inputs - 1)]
+        gates[0].connect(a=i.a0, b=i.a1)
+        for j, gate in enumerate(gates[1:]):
+            gate.connect(a=gates[j].y, b=i[j+2])
+        self.set_outputs(y=gates[-1].y)
+        
+    def __repr__(self):
+        i = ['{}={}; '.format(label, str(self.terminals[label].a.signal)) for label in self.input_labels]
+        o = ['{}={}; '.format(label, str(self.terminals[label].y.signal)) for label in self.output_labels]
+        s = 'Gate {}: ' + ''.join(i) + ''.join(o)
+        return s.format(Gate.gate_type[self.op])
+
+def AND(inputs=2, **kwargs):
     """Factory for Logic AND gate"""
-    return Gate(op=Gate.AND, **kwargs)
+    if inputs == 2:
+        return Gate(op=Gate.AND, **kwargs)
+    elif inputs > 2:
+        return nGate(inputs, op=Gate.AND, **kwargs)
 
-def XOR(**kwargs):
+def XOR(inputs=2, **kwargs):
     """Factory for Logic XOR gate"""
-    return Gate(op=Gate.XOR, **kwargs)
+    if inputs == 2:
+        return Gate(op=Gate.XOR, **kwargs)
+    elif inputs > 2:
+        return nGate(inputs, op=Gate.XOR, **kwargs)
 
-def OR(**kwargs):
+def OR(inputs=2, **kwargs):
     """Factory for Logic OR gate"""
-    return Gate(op=Gate.OR, **kwargs)
+    if inputs == 2:
+        return Gate(op=Gate.OR, **kwargs)
+    elif inputs > 2:
+        return nGate(inputs, op=Gate.OR, **kwargs)
  
 
 
@@ -70,8 +104,76 @@ class SimpleMux(BaseCircuit):
         select_or = OR(a=d0_and.y, b=d1_and.y)
         self.set_outputs(y=select_or.y)
 
-        
 
+class SimpleDecoder(BaseCircuit):
+    """
+    Simple 2 input, 4 output decoder
+    """
+    input_labels = 'a0 a1'.split()
+    output_labels = 'y0 y1 y2 y3'.split()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        and0 = AND(a=i.a0, b=i.a1, bubbles='a b'.split())
+        and1 = AND(a=i.a0, b=i.a1, bubbles=['b'])
+        and2 = AND(a=i.a0, b=i.a1, bubbles=['a'])
+        and3 = AND(a=i.a0, b=i.a1)
+        self.set_outputs(y0=and0.y, y1=and1.y, y2=and2.y, y3=and3.y)
+
+
+class SRLatch(BaseCircuit):
+    """
+    
+    """
+    input_labels = 's r'.split()
+    output_labels = 'q q_bar'.split()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        q_or = OR(a=i.r, bubbles=['y'])
+        q_bar_or = OR(a=i.s, b=q_or.y, bubbles=['y'])
+        q_or.connect(b=q_bar_or.y)
+        self.set_outputs(q=q_or.y, q_bar=q_bar_or.y)
+      
+class DLatch(BaseCircuit):
+    """
+    
+    """
+    input_labels = 'd clk'.split()
+    output_labels = ['q']
+    sizes = dict(clk=1)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        clk = i.clk.branch(self.sizes['d'])
+        reset_gate = AND(a=clk, b=i.d, bubbles=['b'])
+        set_gate = AND(a=clk, b=i.d)
+        sr = SRLatch(s=set_gate.y, r=reset_gate.y)
+        self.set_outputs(q=sr.q)
+        
+class DFlipFlop(BaseCircuit):
+    """
+    
+    """
+    input_labels = 'd clk'.split()
+    output_labels = ['q']
+    sizes = dict(clk=1)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        l1 = DLatch(d=i.d, clk=i.clk, bubbles=['clk'])
+        l2 = DLatch(d=l1.q, clk=i.clk)
+        self.set_outputs(q=l2.q)
+                    
+        
 class Mutiplexer(BaseCircuit):
     """
     Multiplexer circuit with n select lines
@@ -108,38 +210,3 @@ class Mutiplexer(BaseCircuit):
                 mux.connect(d0=pair[0], d1=pair[1])
         #get output from last mux and sets to circuit output
         self.set_outputs(y=levels[-1][0].y)
-
-
-class SimpleDecoder(BaseCircuit):
-    """
-    Simple 2 input, 4 output decoder
-    """
-    input_labels = 'a0 a1'.split()
-    output_labels = 'y0 y1 y2 y3'.split()
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        and0 = AND(a=i.a0, b=i.a1, bubbles='a b'.split())
-        and1 = AND(a=i.a0, b=i.a1, bubbles=['b'])
-        and2 = AND(a=i.a0, b=i.a1, bubbles=['a'])
-        and3 = AND(a=i.a0, b=i.a1)
-        self.set_outputs(y0=and0.y, y1=and1.y, y2=and2.y, y3=and3.y)
-
-
-class SRLatch(BaseCircuit):
-    """
-    
-    """
-    input_labels = 's r'.split()
-    output_labels = 'q q_bar'.split()
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        q_or = OR(a=i.r, bubbles=['y'])
-        q_bar_or = OR(a=i.s, b=q_or.y, bubbles=['y'])
-        q_or.connect(b=q_bar_or.y)
-        self.set_outputs(q=q_or.y, q_bar=q_bar_or.y)
