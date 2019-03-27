@@ -1,3 +1,13 @@
+* Notes
+** Context manager for make
+** base circuit references to created circuits (prevent garbage collection)
+** Terminal should instantiate with Buses. All of them
+** init circuit with bus size =1 and raise warning
+** possible tree structure for circuits and parents
+** finish setter stuff for signals
+** static methods in bus for vdd and gnd, optional numeric argument for len
+** BaseCircuit.set_autoupdate(bool)
+** Uh, Bus addition is confsuing me
 * pdd is supposed to breach a gap between boolean logic and digital circuits. Digital circuits follow the static discipline which assures the voltage levels falls within a range (Agarwal, 252). Boolean Algebra has perfect signals. Boolean algebra alone can implement any circuit however it's a bit too abstract. Considering some implementation details of circuits such as wires, circuit blocks can be helpful. 
 
 * Bus is an array of boolean variables
@@ -116,11 +126,7 @@ class Multiplexer(BaseCircuit):
 - Who should check that 'a' and 'y' of terminal are equally sized busses? I feel like terminal should. Yeah, otherwise it breaks encapsulation. Circuit can make the calls to check but terminal should do the checking
 - Should the bus lengths of a circuit be specified at init? That could solve a lot of problems but it's really ugly. yes, yes it should. I'm trying to abstract things but a 2 bit adder is not the same as a 8-bit adder. Circuits shouldn't be multable like that. I could do some magic so the user doesn't have to input things manually but a circuit should not mutate. An 8 bit circuit is 8 bit for all it's lifetime.
 - Okay, I think that solves 2 big issues that I had, really.
-* Notes
-** Context manager for make
-** base circuit references to created circuits (prevent garbage collection)
-** Terminal should instantiate with Buses. All of them
-** init circuit with bus size =1 and raise warning
-** possible tree structure for circuits and parents
-** finish setter stuff for signals
-** 
+* It seems the core of PDD is basically done. Observer works fine, the abstracations are fine and I'm able to build circuits. From here on all that is left is to follow the literature, build the blocks and then stitch together a processor. With that being said I am not sure how to progress. I need a way to test the blocks and implement memories. I'm not sure how to go about either of those things atm.
+The difficulty with testing the blocks is that, honestly, I just haven't found a good way to do it yet. I'll have a lot of blocks and they all need to be tested.
+As for the memory, there needs to a way to load the non volatile memory into the processor. I'm still not sure what's the best way to do that one either.
+Ugh, testing all those darn blocks sound so tedious.

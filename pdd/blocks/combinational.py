@@ -1,6 +1,8 @@
+"""
+Combinal Logic building blocks
+"""
 from core import Signal
 from dl import BaseCircuit
-
 
 class Gate(BaseCircuit):
     """
@@ -57,6 +59,7 @@ class nGate(BaseCircuit):
         s = 'Gate {}: ' + ''.join(i) + ''.join(o)
         return s.format(Gate.gate_type[self.op])
 
+
 def AND(inputs=2, **kwargs):
     """Factory for Logic AND gate"""
     if inputs == 2:
@@ -77,7 +80,6 @@ def OR(inputs=2, **kwargs):
         return Gate(op=Gate.OR, **kwargs)
     elif inputs > 2:
         return nGate(inputs, op=Gate.OR, **kwargs)
- 
 
 
 class SimpleMux(BaseCircuit):
@@ -123,57 +125,6 @@ class SimpleDecoder(BaseCircuit):
         self.set_outputs(y0=and0.y, y1=and1.y, y2=and2.y, y3=and3.y)
 
 
-class SRLatch(BaseCircuit):
-    """
-    
-    """
-    input_labels = 's r'.split()
-    output_labels = 'q q_bar'.split()
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        q_or = OR(a=i.r, bubbles=['y'])
-        q_bar_or = OR(a=i.s, b=q_or.y, bubbles=['y'])
-        q_or.connect(b=q_bar_or.y)
-        self.set_outputs(q=q_or.y, q_bar=q_bar_or.y)
-      
-class DLatch(BaseCircuit):
-    """
-    
-    """
-    input_labels = 'd clk'.split()
-    output_labels = ['q']
-    sizes = dict(clk=1)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        clk = i.clk.branch(self.sizes['d'])
-        reset_gate = AND(a=clk, b=i.d, bubbles=['b'])
-        set_gate = AND(a=clk, b=i.d)
-        sr = SRLatch(s=set_gate.y, r=reset_gate.y)
-        self.set_outputs(q=sr.q)
-        
-class DFlipFlop(BaseCircuit):
-    """
-    
-    """
-    input_labels = 'd clk'.split()
-    output_labels = ['q']
-    sizes = dict(clk=1)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        l1 = DLatch(d=i.d, clk=i.clk, bubbles=['clk'])
-        l2 = DLatch(d=l1.q, clk=i.clk)
-        self.set_outputs(q=l2.q)
-                    
-        
 class Mutiplexer(BaseCircuit):
     """
     Multiplexer circuit with n select lines

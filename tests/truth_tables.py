@@ -1,0 +1,6 @@
+or = dict(y=[0, 1, 1, 1])
+and = dict(y=[0, 0, 0, 1])
+xor = dict(y=[0, 1, 1, 0])
+nor = dict(y=[1, 0, 0, 0])
+nand = dict(y=[1, 1, 1, 0])
+xnor = dict(y=[1, 0, 0, 1])

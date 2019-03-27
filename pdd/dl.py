@@ -15,6 +15,8 @@ class Bus:
     Bus value is given by Signal which gives a higher level API. Two Bus are equal if
     their signals are equal
     """
+    _vdd_wire = Wire(1)
+    _gnd_wire = Wire(0)
     def __init__(self, n=1, signal=0):
         if n <= 0:
             raise ValueError('Bus size must be > 0')
@@ -37,6 +39,7 @@ class Bus:
         return Bus._from_wires(wires)
 
     def __eq__(self, other):
+        #I feel like I shouldn't do that. Buses can't be "equal"
         return True if self.signal == other.signal else False
     
     def __int__(self):
@@ -46,16 +49,36 @@ class Bus:
         return sig
 
     def __add__(self, other):
-        """Combine buses self + other where the most siginifcant bits are 
-        assigned to self. Notice that this operation is not commutative."""
+        """Add Bus objects by combining wires. If operation is A + B,
+        the result is a Bus where A is the MSB and B is LSB, that is
+        the lefthand bits get shifted to the left.
+        This operation is not commutative."""
         try:
             wires = other.wires + self.wires 
             return self._from_wires(wires)
         except AttributeError:
             return NotImplemented
 
+    @classmethod
+    def bus_from_buses(cls, buses):
+        """Return a bus which is all the wires in buses bundle together.
+        buses[0] is continuously shifted to the left and subsequent buses
+        are appended to the right, that is buses[0] will be the MSB and bus[-1] MSB"""
+        bus = buses.pop(0)
+        while buses:
+            bus = bus + buses.pop(0)
+        return bus
+
+    def sweep(self):
+        """Generator that sweeps over all possible signs for Bus.
+        Start at 0 and end at the last value combination.
+        Essentially counts from 0 to 2 ^ len(self)"""
+        for i in range(2 ** len(self)):
+            yield i
+
     def branch(self, n):
-        """Branches a Bus into a Bus of length n. Assume Bus is of length 1"""
+        """Branche a Bus into a Bus of length n. Analogous to making a Bus
+        out of the same wire. Assume Bus is of length 1"""
         wire = self.wires[0]
         wires = [wire] * n
         return self._from_wires(wires)
@@ -100,11 +123,25 @@ class Bus:
            
     @classmethod
     def _from_wires(cls, wires):
-        """Init bus from a sequence of wires"""
-        bus = Bus(len(wires))
+        """Initialize Bus from a sequence of wires"""
+        bus = cls(len(wires))
         bus.wires = wires
         return bus
  
+    @classmethod
+    def vdd(cls, size=1):
+        """Return VDD, a wire that `should` always be High. Optioanlly
+        receives a size argument which determines the length of the Bus"""
+        wires = [cls._vdd_wire] * size
+        return cls._from_wires(wires)
+
+    @classmethod
+    def gnd(cls, size=1):
+        """Return VDD, a wire that `should` always be Low. Optioanlly
+        receives a size argument which determines the length of the Bus"""
+        wires = [cls._gnd_wire] * size
+        return cls._from_wires(wires)
+        
     
 class Terminal:
     """
@@ -147,9 +184,9 @@ class Terminal:
         """DRY for setter methods. attr is a string, value is a Bus object.
         Checks that value is of type Bus and sets the attr"""
         if type(value) is not Bus:
-            raise TypeError
+            raise TypeError('Terminal attributes must be Buses')
         elif len(value) != size:
-            raise ValueError
+            raise ValueError('Bus size incompatible with Terminal')
         else:
             self.__dict__['_'+attr] = value
 
