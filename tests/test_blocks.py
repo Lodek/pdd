@@ -28,6 +28,17 @@ class TestGate(unittest.TestCase):
         g = XOR()
         self._tester(g, truth_tables.XOR)
 
+    def test_XNOR(self):
+        g = XOR(bubbles=['y'])
+        self._tester(g, truth_tables.XNOR)
+
+    def test_NAND(self):
+        g = AND(bubbles=['y'])
+        self._tester(g, truth_tables.NAND)
+
+    def test_NOR(self):
+        g = OR(bubbles=['y'])
+        self._tester(g, truth_tables.NOR)
 
 if __name__ == '__main__':
     logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)
