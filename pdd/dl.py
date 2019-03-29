@@ -8,12 +8,23 @@ Wire.updater = u
        
 class Bus:
     """
-    The Bus class is an abstraction for a wire or a group of wires. 
-    Bus connects Terminals. Bus are made up of Wires and are sliceable.
-    Slicing a Bus returns a new Bus with the matching wires. Any changes made
-    to the original Bus propagates to the sliced Bus.
-    Bus value is given by Signal which gives a higher level API. Two Bus are equal if
-    their signals are equal
+    The Bus class is an abstraction for a wire or a group of wire objects 
+    which are analogous to ideal wires in digital circuits. 
+    Bus connects Terminals together thus conecting circuits.
+
+    The class provides operations to ease the handling of the wires in a
+    bus such as: slicing, branching a wire into many, combining a sequence
+    of buses into a single bus.
+
+    Operating on a Bus object return a new Bus with made up by the 
+    specified wires. Any changes made to the those wires will manifest
+    to all buses that contain those wires.
+
+    Bus are data carries and that data is specified by the bit value of
+    the wires. To provide a higher level usage Bus uses signal objects 
+    instead to handle that.
+    Two buses are equal if their signal are equal, len(bus) return the
+    number of wires.
     """
     _vdd_wire = Wire(1)
     _gnd_wire = Wire(0)
@@ -26,7 +37,7 @@ class Bus:
 
     def __repr__(self):
         s = '{}: signal={}; len={};'
-        return s.format(self.__class__, self.signal, len(self))
+        return s.format(self.__class__, str(self.signal), len(self))
         
     def __len__(self):
         return len(self.wires)
@@ -42,12 +53,6 @@ class Bus:
         #I feel like I shouldn't do that. Buses can't be "equal"
         return True if self.signal == other.signal else False
     
-    def __int__(self):
-        sig = 0
-        for i, wire in enumerate(self.wires):
-            sig |= wire.bit << i
-        return sig
-
     def __add__(self, other):
         """Add Bus objects by combining wires. If operation is A + B,
         the result is a Bus where A is the MSB and B is LSB, that is
@@ -60,13 +65,12 @@ class Bus:
             return NotImplemented
 
     @classmethod
-    def bus_from_buses(cls, buses):
-        """Return a bus which is all the wires in buses bundle together.
-        buses[0] is continuously shifted to the left and subsequent buses
-        are appended to the right, that is buses[0] will be the MSB and bus[-1] MSB"""
-        bus = buses.pop(0)
+    def merge(self, buses):
+        """Return a unified Bus from a list of buses. buses[0] will
+        represent the LSB of the resulting bus"""
+        bus = buses.pop()
         while buses:
-            bus = bus + buses.pop(0)
+            bus = bus + buses.pop()
         return bus
 
     def sweep(self):
@@ -98,10 +102,15 @@ class Bus:
         self.set()
         self.reset()
 
+    def split(self):
+        """Return self as a list of 1 bit buses"""
+        buses = [self._from_wires([wire]) for wire in self.wires]
+        return buses
+
     @property
     def signal(self):
         """Returns Signal object for bus"""
-        return Signal(int(self), len(self))
+        return Signal.from_wires(self.wires)
         
     @signal.setter
     def signal(self, value):
@@ -115,9 +124,9 @@ class Bus:
         if v == self.signal.value:
             return
         if type(value) == Signal:
-            bits = value.to_bits()
+            bits = value.bits
         else:
-            bits = Signal(value, len(self)).to_bits()
+            bits = Signal(value, len(self)).bits
         for wire, bit in zip(self.wires, bits):
             wire.bit = bit
            
@@ -167,9 +176,7 @@ class Terminal:
     and assigned to 'a' and 'y'. Optionally, the 'a' and 'y' Buses can be
     given at init.
     """
-    VDD = Bus(1, 1)
-    GND = Bus(1, 0)
-
+    vdd = Bus.vdd()
     def __init__(self, size, a=None, y=None, en=None, bubble=False):
         self.size = size
         self._a = None
@@ -178,7 +185,7 @@ class Terminal:
         self.bubble = bubble
         self.a = a if a else Bus(size)
         self.y = y if y else Bus(size)
-        self.en = en if en else self.VDD
+        self.en = en if en else self.vdd
 
     def _setter(self, attr, value, size):
         """DRY for setter methods. attr is a string, value is a Bus object.
@@ -201,7 +208,7 @@ class Terminal:
     def propagate(self):
         """Transmit the signal from the in_bus to the out bus if Bus is connected"""
         sig = self.a.signal
-        if self.en == self.VDD:
+        if self.en == self.vdd:
             self.y.signal = sig if not self.bubble else sig.complement()
 
 
@@ -246,13 +253,11 @@ class BaseCircuit:
 
         self.connect(**kwargs)
         self.make()
+        self.update_triggers()
 
     def __repr__(self):
-        s = '{}: '.format(self.__class__)
-        i = ['{}={}; '.format(label, str(self.terminals[label].a.signal)) for label in self.input_labels]
-        o = ['{}={}; '.format(label, str(self.terminals[label].y.signal)) for label in self.output_labels]
-        s = s + ''.join(i) + ''.join(o)
-        return s
+        s = '{}: '.format(self.__class__.__name__)
+        return s + str(self.state)
         
     def connect(self, **kwargs):
         for label, bus in kwargs.items():
@@ -261,6 +266,16 @@ class BaseCircuit:
             elif label in self.output_labels:
                 self.terminals[label].y = bus
         self.update_triggers()
+
+    def connect_sequence(self, seq):
+        """Receive a sequence of buses and sequentially
+        assign bus to input terminals. The order of the assignment
+        is given by self.input_labels. len(seq) must be equal to
+        len(input_labels)"""
+        if len(label) != len(seq):
+            raise ValueError('Not enough buses for all inputs')
+        for label, bus in zip(self.input_labels, seq):
+            self.terminals[label].a = bus
 
     def update_triggers(self):
         """Update the trigger Buses in the observer object"""
@@ -333,3 +348,41 @@ class BaseCircuit:
             return self.terminals[attr].y
         else:
             object.__getattribute__(self, attr)
+
+    def get_bus(self, label):
+        """Return the Bus matching label"""
+        if label in self.output_labels:
+            return self.terminals[label].y
+        elif label in self.input_labels:
+            return self.terminals[label].a
+        else:
+            raise ValueError('Label "{}" not in circuit'.format(label))
+
+    def get_buses(self, buses):
+        """Expect buses to be a sequence of strings corresponding to labels.
+        returns a list with all the buses matching the labels"""
+        return [self.get_bus(label) for label in buses]
+
+    @property
+    def state(self):
+        i = {label : str(self.terminals[label].a.signal) for label in self.input_labels}
+        o = {label : str(self.terminals[label].y.signal) for label in self.output_labels}
+        i.update(o)
+        return i
+
+    @property
+    def state_int(self):
+        i = {label : int(self.terminals[label].a.signal) for label in self.input_labels}
+        o = {label : int(self.terminals[label].y.signal) for label in self.output_labels}
+        i.update(o)
+        return i
+
+    @property
+    def auto_update(self):
+        return Wire.auto_update
+
+    @auto_update.setter
+    def auto_update(self, value):
+        if not type(value) is bool:
+            raise ValueError('Value must be bool')
+        Wire.auto_update = value

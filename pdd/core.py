@@ -59,17 +59,23 @@ class Signal:
             e = TypeError(msg.format(type(value), self.__class__))
             logger.exception(e)
             raise e
-        self.size = size
+        self._size = size
         logger.debug(repr(self))
-        
-    def to_bits(self):
-        """Return a tuple bitwise representation of Signal. 
-        The 0th element of the sequence represents the 0th bit.
-        This seemingly odd behavior makes slicing busses easier"""
-        return tuple(self.value >> i & 0x1 for i in range(self.size))
 
-    def __len__(self):
-        return self.size
+    @classmethod
+    def from_wires(cls, wires):
+        """Initialize a signal object from a list of wires"""
+        sig = 0
+        for i, wire in enumerate(wires):
+            sig |= wire.bit << i
+        return cls(sig, len(wires))
+        
+    @property
+    def bits(self):
+        """Convert value into a sequence of 0s and 1s, essentially
+        a list with its binary representation.
+        The 0th element of the sequence represents the 0th bit."""
+        return tuple(self.value >> i & 0x1 for i in range(self._size))
 
     def __eq__(self, other):
         return self.value == other.value
@@ -78,6 +84,9 @@ class Signal:
         s = '{}: value={};'
         return s.format(self.__class__, hex(self.value))
         
+    def __int__(self):
+        return self.value
+    
     def __str__(self):
         return hex(self.value)
 
@@ -87,25 +96,25 @@ class Signal:
     @classmethod
     def NOT(cls, a):
         mask = 0
-        for i in range(len(a)):
+        for i in range(a._size):
             mask |= 1 << i
         value = ~a.value & mask
-        return cls(value, len(a))
+        return cls(value, a._size)
 
     @classmethod
     def OR(cls, a, b):
         value = a.value | b.value
-        return cls(value, len(a))
+        return cls(value, a._size)
 
     @classmethod
     def AND(cls, a, b):
         value = a.value & b.value
-        return cls(value, len(a))
+        return cls(value, a._size)
 
     @classmethod
     def XOR(cls, a, b):
         value = a.value ^ b.value
-        return cls(value, len(a))
+        return cls(value, a._size)
 
 class Updater:
     """

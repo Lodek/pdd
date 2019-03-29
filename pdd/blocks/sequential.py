@@ -3,6 +3,7 @@ Sequential Logic building blocks
 """
 from core import Signal
 from dl import BaseCircuit
+from blocks.combinational import AND, OR, XOR
 
 
 class SRLatch(BaseCircuit):
@@ -19,6 +20,7 @@ class SRLatch(BaseCircuit):
         q_or = OR(a=i.r, bubbles=['y'])
         q_bar_or = OR(a=i.s, b=q_or.y, bubbles=['y'])
         q_or.connect(b=q_bar_or.y)
+        q_bar_or.update() #edge cases are edgy
         self.set_outputs(q=q_or.y, q_bar=q_bar_or.y)
       
 

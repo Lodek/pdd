@@ -107,6 +107,7 @@ class SimpleMux(BaseCircuit):
         self.set_outputs(y=select_or.y)
 
 
+
 class SimpleDecoder(BaseCircuit):
     """
     Simple 2 input, 4 output decoder

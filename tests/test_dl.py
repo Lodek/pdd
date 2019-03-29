@@ -12,25 +12,35 @@ class TestBus(unittest.TestCase):
         self.assertEqual(b.signal, Signal(10, 4))
 
     def test_slicing(self):
+        """Test Bus slicing feature. Test index and ranges"""
         b = Bus(4)
         b.signal = 0b1010
-        b_slice = b[3]
-        #2^3 bit
-        self.assertEqual(b_slice.signal, Signal(1, 1))
-        b_slice.signal = 0
-        self.assertEqual(b.signal, Signal(0b0010, 4))
+        bits = [0, 1, 0, 1]
+
+        for subbus, bit in zip(b, bits):
+            self.assertEqual(int(subbus.signal), bit)
+
         b_slice = b[2:]
-        self.assertEqual(b_slice.signal, Signal(0, 2))
+        self.assertEqual(b_slice.signal, Signal(2, 2))
         b_slice.signal = 0b11
         self.assertEqual(b.signal, Signal(14, 4))
 
-    def test_add(self):
+    def test_add_single_bit(self):
+        """Add two buses of len 1"""
         a = Bus(1, 1)
         b = Bus(1, 0)
         c = a + b
         self.assertEqual(c.signal.value, 2)
 
+    def test_add_multi_bit(self):
+        """Add two buses of len != 1"""
+        a = Bus(2, 1)
+        b = Bus(2, 2)
+        c = a + b
+        self.assertEqual(c.signal.value, 6)
+
     def test_branch(self):
+        """Test branching feature"""
         a = Bus(1)
         branched_a = a.branch(4)
         self.assertEqual(len(branched_a), 4)
@@ -38,6 +48,28 @@ class TestBus(unittest.TestCase):
         a.signal = 1
         self.assertEqual(branched_a.signal, Signal(2**4-1, 4))
 
+    def test_merge(self):
+        a = Bus(1)
+        b = Bus(1,1)
+        buses = [a, b]
+        merged = Bus.merge(buses)
+        for a, b in zip(buses, merged):
+            self.assertEqual(a, b)
+
+    def test_set_reset(self):
+        a = Bus(4)
+        a.set()
+        self.assertEqual(int(a.signal), 15)
+        a.reset()
+        self.assertEqual(int(a.signal), 0)
+
+    def test_split(self):
+        a = Bus(4, 0b0111)
+        buses = a.split()
+        for i, bus in enumerate(buses):
+            self.assertEqual(a[i].signal, bus.signal)
+            
+    
 class TestTerminal(unittest.TestCase):
     def setUp(self):
         self.t = Terminal(1)

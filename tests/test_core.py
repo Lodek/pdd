@@ -34,14 +34,13 @@ class TestSignal(unittest.TestCase):
         
     def test_basic(self):
         a = Signal(0b101, 3)
-        self.assertEqual(len(self.a), 3)
-        self.assertEqual(self.a.to_bits(), (1,0,1))
+        self.assertEqual(self.a.bits, (1,0,1))
         b = a.complement()
         c = Signal(0b010, 3)
         self.assertEqual(b, c)
         
     def test_consistency(self):
-        bits_to_int = lambda signal : int(''.join(reversed([str(bit) for bit in signal.to_bits()])), 2)
+        bits_to_int = lambda signal : int(''.join(reversed([str(bit) for bit in signal.bits])), 2)
         signals = self.setUp()
         for signal in signals:
             self.assertEqual(signal.value, bits_to_int(signal))

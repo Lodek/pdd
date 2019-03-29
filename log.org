@@ -124,9 +124,18 @@ class Multiplexer(BaseCircuit):
 * Getting caught up with small detais and edge cases again. How can I avoid going down a rabbit hole?
 * How to delegate task?
 - Who should check that 'a' and 'y' of terminal are equally sized busses? I feel like terminal should. Yeah, otherwise it breaks encapsulation. Circuit can make the calls to check but terminal should do the checking
-- Should the bus lengths of a circuit be specified at init? That could solve a lot of problems but it's really ugly. yes, yes it should. I'm trying to abstract things but a 2 bit adder is not the same as a 8-bit adder. Circuits shouldn't be multable like that. I could do some magic so the user doesn't have to input things manually but a circuit should not mutate. An 8 bit circuit is 8 bit for all it's lifetime.
+- Should the bus lengths of a circuit be specified at init? That could solve a lot of problems but it's really ugly. yes, yes it should. I'm trying to abstract things but a 2 bit adder is not the same as a 8-bit adder. Circuits shouldn't be multable like that. I could do some magic so the user doesn't have to input things manually but a circuit should not mutate. An 8 bit circuit is 8 bit for all its lifetime.
 - Okay, I think that solves 2 big issues that I had, really.
 * It seems the core of PDD is basically done. Observer works fine, the abstracations are fine and I'm able to build circuits. From here on all that is left is to follow the literature, build the blocks and then stitch together a processor. With that being said I am not sure how to progress. I need a way to test the blocks and implement memories. I'm not sure how to go about either of those things atm.
 The difficulty with testing the blocks is that, honestly, I just haven't found a good way to do it yet. I'll have a lot of blocks and they all need to be tested.
 As for the memory, there needs to a way to load the non volatile memory into the processor. I'm still not sure what's the best way to do that one either.
 Ugh, testing all those darn blocks sound so tedious.
+
+* So next steps?
+- I have been thinking about that. I think I got a good base for the tester but it is still not quite there. I also need to implement multibit testing. its' really not legible and it's hard to keep track. Maybe a dict would be the way to go. A dict and a script to generate the dict from a txt file so it's a bit easier write the truth table.
+- Fix SR Latch weird initial condition, check with pdb and if nescessary assign to it 
+- implement basecircuit auto update
+- implement adder, subtractor, comparator, alu
+- shifters and rotators
+- test the mess
+- 

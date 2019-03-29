@@ -1,6 +1,29 @@
-or = dict(y=[0, 1, 1, 1])
-and = dict(y=[0, 0, 0, 1])
-xor = dict(y=[0, 1, 1, 0])
-nor = dict(y=[1, 0, 0, 0])
-nand = dict(y=[1, 1, 1, 0])
-xnor = dict(y=[1, 0, 0, 1])
+OR = [dict(a=0, b=0, y=0),
+      dict(a=0, b=1, y=1),
+      dict(a=1, b=0, y=1),
+      dict(a=1, b=1, y=1)]
+
+AND = [dict(a=0, b=0, y=0),
+       dict(a=1, b=0, y=0),
+       dict(a=0, b=1, y=0),
+       dict(a=1, b=1, y=1)]
+
+XOR = [dict(a=0, b=0, y=0),
+       dict(a=0, b=1, y=1),
+       dict(a=1, b=0, y=1),
+       dict(a=1, b=1, y=0)]
+
+NOR = [dict(a=0, b=0, y=1),
+       dict(a=0, b=1, y=0),
+       dict(a=1, b=0, y=0),
+       dict(a=1, b=1, y=0)]
+
+NAND = [dict(a=0, b=0, y=1),
+        dict(a=0, b=1, y=1),
+        dict(a=1, b=0, y=1),
+        dict(a=1, b=1, y=0)]
+
+XNOR = [dict(a=0, b=0, y=1),
+        dict(a=0, b=1, y=0),
+        dict(a=1, b=0, y=0),
+        dict(a=1, b=1, y=1)]
