@@ -19,6 +19,7 @@ class Gate(BaseCircuit):
     def __init__(self, op, **kwargs):
         self.op = op
         super().__init__(**kwargs)
+        self.update()
 
     def update(self):
         self.terminals['a'].propagate()
