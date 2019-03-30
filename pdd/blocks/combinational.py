@@ -163,3 +163,39 @@ class Mutiplexer(BaseCircuit):
                 mux.connect(d0=pair[0], d1=pair[1])
         #get output from last mux and sets to circuit output
         self.set_outputs(y=levels[-1][0].y)
+
+class HalfAdder(BaseCircuit):
+    """
+    
+    """
+    input_labels = 'a b'.split()
+    output_labels = 's cout'.split()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        sum = XOR(a=i.a, b=i.b)
+        carry = AND(a=i.a, b=i.b)
+        self.set_outputs(s=sum.y, cout=carry.y)
+        
+class FullAdder(BaseCircuit):
+    """
+    Does not work for TRUE multibit addtion, meaning
+    it will execute the operations on a bit by bit basis not on the word
+    """
+    input_labels = "a b cin".split()
+    output_labels = "s cout".split()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        sum = XOR(inputs=3, a0=i.a, a1=i.b, a2=i.cin)
+
+        and0 = AND(a=i.a, b=i.b)
+        and1 = AND(a=i.a, b=i.cin)
+        and2 = AND(a=i.b, b=i.cin)
+        carry = OR(inputs=3, a0=and0.y, a1=and1.y, a2=and2.y)
+        self.set_outputs(s=sum.y, cout=carry.y)
+
