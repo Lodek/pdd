@@ -222,10 +222,14 @@ class BaseCircuit:
     Either a data carrying Bus or size must be part of kwargs otherwise an Exception is raised
     """
     updater = u
+    parent = None
+    children = []
     def __init__(self, **kwargs):
         #self.input_labels = []
         #self.output_labels = []
         self.triggers = []
+        self.parent = None
+        self.children = []
         try:
             if not type(self.sizes) is dict:
                 #????????????????
@@ -252,12 +256,39 @@ class BaseCircuit:
             self.set_bubbles(**{label : True for label in kwargs['bubbles']})
 
         self.connect(**kwargs)
+
+        self.parent = self.get_parent()
+        logger.debug('Parent of circuit {} set to {}'.format(self, self.parent))
+        self.parent.children.append(self)
+        self.make_setup()
         self.make()
+        self.make_tear_down()
+
         self.update_triggers()
 
     def __repr__(self):
         s = '{}: '.format(self.__class__.__name__)
         return s + str(self.state)
+
+    @staticmethod
+    def get_parent():
+        """Return value of parent set in BaseCircuit class"""
+        return BaseCircuit.parent
+
+    @staticmethod
+    def set_parent(value):
+        """Set BaseCircuit parent attribute to value"""
+        BaseCircuit.parent = value
+
+    def make_setup(self):
+        """Setup for make. Sets self as the parent in BaseCircuit"""
+        logger.debug('Make setup for circ. {}'.format(self))
+        self.set_parent(self)
+
+    def make_tear_down(self):
+        """Set BaseCircuit parent attribute to self"""
+        logger.debug('Make teardown for circ. {}'.format(self))
+        self.set_parent(self.parent)
         
     def connect(self, **kwargs):
         for label, bus in kwargs.items():
@@ -386,3 +417,5 @@ class BaseCircuit:
         if not type(value) is bool:
             raise ValueError('Value must be bool')
         Wire.auto_update = value
+
+BaseCircuit.parent = BaseCircuit

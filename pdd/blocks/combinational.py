@@ -4,21 +4,7 @@ Combinal Logic building blocks
 from core import Signal
 from dl import BaseCircuit, Bus
 
-class Gate(BaseCircuit):
-    """
-    Implementation of a logic gate. Gate should not be used as a template
-    to implement other logic blocks, it is an edge case because it is THE
-    fundamental building block.
-    """
-    input_labels = 'a b'.split()
-    output_labels = ['y']
-    AND = Signal.AND
-    OR = Signal.OR
-    XOR = Signal.XOR
-    gate_type = {Signal.OR : 'OR', Signal.AND : 'AND', Signal.XOR : 'XOR'}
-    def __init__(self, op, **kwargs):
-        self.op = op
-        super().__init__(**kwargs)
+per().__init__(**kwargs)
         self.update()
 
     def update(self):
