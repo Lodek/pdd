@@ -8,3 +8,6 @@ from tools import *
 u = Wire.updater
 Wire.auto_update = True
 
+dec = cb.SimpleDecoder()
+
+

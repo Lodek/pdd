@@ -8,4 +8,4 @@ $(patsubst %.py, %, $(tests)):
 	python $@.py 2>&1 | tee $@.out
 
 clean:
-	rm *.out *.log
+	rm -rf *.out *.log __pycache__

@@ -7,11 +7,9 @@ from tools import gen_output_table, TruthTable
 class TestGate(unittest.TestCase):
 
     def _tester(self, circuit, truth_table):
-        reference_table = TruthTable(circuit.input_labels, circuit.output_labels, 
-                                     truth_table)
         generated_table = TruthTable(circuit.input_labels, circuit.output_labels, 
                                      gen_output_table(circuit))
-        self.assertEqual(reference_table, generated_table)
+        self.assertEqual(truth_table, generated_table)
                 
     def test_AND(self):
         """Test AND gate"""
@@ -39,6 +37,23 @@ class TestGate(unittest.TestCase):
     def test_NOR(self):
         g = OR(bubbles=['y'])
         self._tester(g, truth_tables.NOR)
+
+    def test_SimpleMux(self):
+        circuit = cb.SimpleMux()
+        self._tester(circuit, truth_tables.SimpleMux)
+
+    def test_SimpleDec(self):
+        circuit = cb.SimpleDecoder()
+        self._tester(circuit, truth_tables.SimpleDecoder)
+
+    def test_HalfAdder(self):
+        circuit = cb.HalfAdder()
+        self._tester(circuit, truth_tables.HalfAdder)
+
+    def test_FullAdder(self):
+        circuit = cb.FullAdder()
+        self._tester(circuit, truth_tables.FullAdder)
+
 
 if __name__ == '__main__':
     logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)

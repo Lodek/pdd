@@ -21,11 +21,6 @@ class TestBaseCircuit(unittest.TestCase):
         """DRY for creating of MockCircuit with kwargs"""
         return MockCircuit(self.inputs, self.outputs, **kwargs)
     
-    def test_init_fail(self):
-        """Test BaseCircuit fails init when no bus or size is set"""
-        with self.assertRaises(Exception):
-            self.obj()
-
     def test_init_with_size(self):
         """Test BaseCircuit with size kwarg"""
         obj = self.obj(size=1)
@@ -91,18 +86,6 @@ class TestBaseCircuit(unittest.TestCase):
         obj.set_outputs(y=self.y)
         self.assertEqual(obj.terminals['y'].a, self.y)
         
-    def test_get_outputs(self): 
-        obj = self.obj_bus()
-        obj.terminals['y'].y.signal = 15
-        y = Bus(4, 15)
-        self.assertEqual(obj.output(), y)
-
-    def test_get_outputs(self): 
-        obj = self.obj_bus()
-        obj.terminals['y'].y.signal = 15
-        y = [Bus(4, 15)]
-        self.assertEqual(obj.outputs('y'), y)
-
     def test_update_attributes(self):
         """Test the attributes in circuit corresponding to the external buses"""
         obj = self.obj_bus()
