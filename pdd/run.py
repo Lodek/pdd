@@ -9,5 +9,5 @@ u = Wire.updater
 Wire.auto_update = True
 
 cpa = cb.CPA(size=4)
-
-
+sub = cb.Subtractor(size=4)
+eq = cb.EqualityComparator(size=4)
