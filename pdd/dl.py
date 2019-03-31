@@ -307,6 +307,7 @@ class BaseCircuit:
             raise ValueError('Not enough buses for all inputs')
         for label, bus in zip(self.input_labels, seq):
             self.terminals[label].a = bus
+        self.update_triggers()
 
     def update_triggers(self):
         """Update the trigger Buses in the observer object"""
