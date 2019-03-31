@@ -1,13 +1,13 @@
-* Notes
-** Context manager for make
-** base circuit references to created circuits (prevent garbage collection)
-** Terminal should instantiate with Buses. All of them
-** init circuit with bus size =1 and raise warning
-** possible tree structure for circuits and parents
-** finish setter stuff for signals
-** static methods in bus for vdd and gnd, optional numeric argument for len
-** BaseCircuit.set_autoupdate(bool)
-** Uh, Bus addition is confsuing me
+
+* Todos
+[x] Terminal should instantiate with Buses. All of them
+[x] init circuit with bus size =1 and raise warning
+[x] possible tree structure for circuits and parents
+[x] finish setter stuff for signals
+[x] static methods in bus for vdd and gnd, optional numeric argument for len
+[x] BaseCircuit.set_autoupdate(bool)
+[] Bubbles kwarg for circuit should toggle bubble instead of setting (Comparator edge case)
+
 * pdd is supposed to breach a gap between boolean logic and digital circuits. Digital circuits follow the static discipline which assures the voltage levels falls within a range (Agarwal, 252). Boolean Algebra has perfect signals. Boolean algebra alone can implement any circuit however it's a bit too abstract. Considering some implementation details of circuits such as wires, circuit blocks can be helpful. 
 
 * Bus is an array of boolean variables

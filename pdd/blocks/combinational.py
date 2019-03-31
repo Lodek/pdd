@@ -229,16 +229,16 @@ class Subtractor(BaseCircuit):
     """
     
     """
-    input_labels = "a b cin".split()
-    output_labels = "s cout".split()
-    sizes = dict(cin=1, cout=1)
+    input_labels = "a b".split()
+    output_labels = "s".split()
+    sizes = dict(cout=1)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
         cpa = CPA(a=i.a, b=i.b, cin=Bus.vdd(), bubbles=['b'])
-        self.set_outputs(cout=cpa.cout, s=cpa.s)
+        self.set_outputs(s=cpa.s)
  
 
 class EqualityComparator(BaseCircuit):
@@ -260,3 +260,26 @@ class EqualityComparator(BaseCircuit):
         self.set_outputs(eq=ender.y)
 
         
+class Comparator(BaseCircuit):
+    """
+    
+    """
+    input_labels = 'a b'.split()
+    output_labels = 'neq eq lte gt gte lt'.split()
+    sizes = {label:1 for label in output_labels}
+    bubbles = {label : True for label in 'neq lte gte'.split()}
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        eq = EqualityComparator(a=i.a, b=i.b)
+        neq = EqualityComparator(a=i.a, b=i.b, bubbles=['eq'])
+        lt = Subtractor(a=i.a, b=i.b) # MSB of A-B 1 if A < B
+        gte = Subtractor(a=i.a, b=i.b, bubbles=['s']) # MSB of A-B 0 if A < B, so we bubble it
+        gt = Subtractor(a=i.b, b=i.a) #MSB of B-A 1 if B < A
+        lte = Subtractor(a=i.b, b=i.a, bubbles=['s']) #MSB of B-A 0 if B >= A, so we bubble it
+        self.set_outputs(eq=eq.eq, neq=neq.eq,
+                         lt=lt.s[-1], gte=gte.s[-1],
+                         gt=gt.s[-1], lte=lte.s[-1])
