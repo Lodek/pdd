@@ -2,7 +2,7 @@
 Combinal Logic building blocks
 """
 from core import Signal
-from dl import BaseCircuit
+from dl import BaseCircuit, Bus
 
 class Gate(BaseCircuit):
     """
@@ -198,4 +198,30 @@ class FullAdder(BaseCircuit):
         and2 = AND(a=i.b, b=i.cin)
         carry = OR(inputs=3, a0=and0.y, a1=and1.y, a2=and2.y)
         self.set_outputs(s=sum.y, cout=carry.y)
+
+class CPA(BaseCircuit):
+    """
+    
+    """
+    input_labels = "a b cin".split()
+    output_labels = "s cout".split()
+    sizes = dict(cin=1, cout=1)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        word_size = self.sizes['a']
+        adders = [FullAdder(size=1) for _ in range(word_size)]
+        a_split = i.a.split()
+        b_split = i.b.split()
+        #set input for adders
+        for a, b, adder in zip(a_split, b_split, adders):
+            adder.connect(a=a, b=b)
+        #set cins
+        adders[0].connect(cin=i.cin)
+        for i, adder in enumerate(adders[1:]):
+            adder.connect(cin=adders[i].cout)
+        s = Bus.merge([adder.s for adder in adders])
+        self.set_outputs(s=s, cout=adders[-1].cout)
 
