@@ -69,3 +69,12 @@ FullAdder = TruthTable('a b cin'.split(), 'cout s'.split(),
                         dict(cin=1, a=1, b=0, cout=1, s=0),
                         dict(cin=1, a=1, b=1, cout=1, s=1)])
 
+AND_3in = TruthTable('a0 a1 a2'.split(), ['y'],
+                     [dict(a2=0, a1=0, a0=0, y=0),
+                      dict(a2=0, a1=0, a0=1, y=0),
+                      dict(a2=0, a1=1, a0=0, y=0),
+                      dict(a2=0, a1=1, a0=1, y=0),
+                      dict(a2=1, a1=0, a0=0, y=0),
+                      dict(a2=1, a1=0, a0=1, y=0),
+                      dict(a2=1, a1=1, a0=0, y=0),
+                      dict(a2=1, a1=1, a0=1, y=1)])

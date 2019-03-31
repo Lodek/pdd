@@ -272,7 +272,7 @@ class BaseCircuit:
         assign bus to input terminals. The order of the assignment
         is given by self.input_labels. len(seq) must be equal to
         len(input_labels)"""
-        if len(label) != len(seq):
+        if len(self.input_labels) != len(seq):
             raise ValueError('Not enough buses for all inputs')
         for label, bus in zip(self.input_labels, seq):
             self.terminals[label].a = bus

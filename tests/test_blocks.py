@@ -54,6 +54,9 @@ class TestGate(unittest.TestCase):
         circuit = cb.FullAdder()
         self._tester(circuit, truth_tables.FullAdder)
 
+    def test_3input_and(self):
+        circuit = AND(inputs=3)
+        self._tester(circuit, truth_tables.AND_3in)
 
 if __name__ == '__main__':
     logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)

@@ -1,75 +1,87 @@
 
-blocks.py,65
-class Gate(4,52
-    def __init__(13,334
-    def update(19,506
+core.py,600
+class Wire:Wire8,277
+    def __init__(23,737
+    def __repr__(28,847
+    def bit(33,978
+    def bit(37,1039
+class Signal:Signal47,1312
+    def __init__(54,1657
+    def from_wires(66,2032
+    def bits(74,2275
+    def __eq__(80,2548
+    def __repr__(83,2619
+    def __int__(87,2737
+    def __str__(90,2791
+    def complement(93,2846
+    def NOT(97,2926
+    def OR(105,3109
+    def AND(110,3219
+    def XOR(115,3330
+class Updater:Updater119,3424
+    def __init__(136,4261
+    def subscribe(144,4483
+    def unsubscribe(151,4777
+    def notify(160,5136
+    def update(165,5337
 
-core.py,527
-class Wire:Wire8,265
-    def __init__(12,328
-    def __repr__(15,383
-class Signal:Signal20,486
-    def __init__(27,831
-    def to_bits(38,1196
-    def __len__(44,1482
-    def __eq__(47,1531
-    def __repr__(50,1602
-    def __str__(54,1720
-    def complement(57,1775
-    def NOT(61,1855
-    def OR(69,2036
-    def AND(74,2145
-    def XOR(79,2255
-class Updater:Updater83,2348
-    def __init__(96,2939
-    def subscribe(104,3161
-    def unsubscribe(110,3425
-    def notify(119,3785
-    def update(124,3986
+dl.py,1207
+class Bus:Bus9,176
+    def __init__(31,1077
+    def __repr__(38,1299
+    def __len__(42,1438
+    def __getitem__(45,1493
+    def __eq__(52,1731
+    def __add__(56,1892
+    def merge(68,2343
+    def sweep(76,2592
+    def branch(83,2852
+    def set(90,3107
+    def reset(95,3225
+    def pulse(100,3344
+    def split(105,3454
+    def signal(111,3628
+    def signal(116,3767
+    def _from_wires(134,4374
+    def vdd(141,4555
+    def gnd(148,4822
+class Terminal:Terminal155,5084
+    def __init__(180,6283
+    def _setter(190,6596
+    def _getter(200,7036
+    def propagate(208,7435
+class BaseCircuit:BaseCircuit215,7680
+    def __init__(225,8062
+    def __repr__(258,9274
+    def connect(262,9393
+    def connect_sequence(270,9681
+    def update_triggers(280,10144
+    def make(288,10510
+    def get_inputs(294,10785
+    def set_outputs(302,11244
+    def set_bubbles(312,11674
+    def update(319,11968
+    def namedtuple_factory(328,12348
+    def __setattr__(334,12627
+    def __getattr__(342,12915
+    def get_bus(352,13286
+    def get_buses(361,13614
+    def state(367,13859
+    def state_int(374,14111
+    def auto_update(381,14367
+    def auto_update(385,14451
 
-dl.py,897
-class Bus:Bus9,150
-    def __init__(22,652
-    def __repr__(27,802
-    def __len__(31,936
-    def __getitem__(34,991
-    def __eq__(41,1229
-    def __int__(44,1325
-    def __add__(50,1463
-    def signal(60,1826
-    def signal(65,1964
-    def _from_wires(81,2598
-class Terminal:Terminal88,2761
-    def __init__(115,3981
-    def setter(125,4294
-    def a(136,4670
-    def a(140,4725
-    def y(144,4807
-    def y(148,4862
-    def en(152,4944
-    def en(156,5002
-    def propagate(159,5065
-class BaseCircuit:BaseCircuit165,5309
-    def __init__(176,5696
-    def output(208,6919
-    def outputs(215,7181
-    def connect(220,7382
-    def update_triggers(229,7703
-    def make(235,7920
-    def get_inputs(241,8195
-    def set_outputs(248,8601
-    def set_bubbles(257,9000
-    def update(264,9294
-    def namedtuple_factory(273,9678
-    def update_attributes(279,9957
+tools.py,208
+def gen_output_table(3,20
+def gen_pretty_output_table(20,705
+class TruthTable:TruthTable38,1573
+    def __init__(45,1880
+    def listify_dicts(54,2206
+    def get_index(67,2756
+    def __eq__(78,3215
 
-gates.py,44
-def AND(3,25
-def XOR(7,121
-def OR(11,217
+truth_tables.py,0
 
-tools.py,88
-class SigGen:SigGen2,1
-    def okay(4,34
-class Clock(10,150
-    def signals(12,191
+run.py,0
+
+__init__.py,0

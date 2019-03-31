@@ -231,6 +231,7 @@ class Subtractor(BaseCircuit):
     """
     input_labels = "a b cin".split()
     output_labels = "s cout".split()
+    sizes = dict(cin=1, cout=1)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -246,6 +247,7 @@ class EqualityComparator(BaseCircuit):
     """
     input_labels = "a b".split()
     output_labels = "eq".split()
+    sizes = dict(eq=1)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -254,4 +256,7 @@ class EqualityComparator(BaseCircuit):
         compare = XOR(a=i.a, b=i.b, bubbles=['y'])
         buses = compare.y.split()
         ender = AND(inputs=len(buses))
-        ender.connect_seq(buses)
+        ender.connect_sequence(buses)
+        self.set_outputs(eq=ender.y)
+
+        
