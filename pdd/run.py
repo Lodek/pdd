@@ -11,6 +11,3 @@ import harris
 u = Wire.updater
 Wire.auto_update = True
 
-alu = harris.ALU(size=4)
-
-c = sb.Counter(4)

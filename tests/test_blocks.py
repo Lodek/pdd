@@ -42,9 +42,9 @@ class TestGate(unittest.TestCase):
         circuit = cb.SimpleMux()
         self._tester(circuit, truth_tables.SimpleMux)
 
-    def test_SimpleDec(self):
-        circuit = cb.SimpleDecoder()
-        self._tester(circuit, truth_tables.SimpleDecoder)
+    def test_BaseDecoder(self):
+        circuit = cb.BaseDecoder()
+        self._tester(circuit, truth_tables.BaseDecoder)
 
     def test_HalfAdder(self):
         circuit = cb.HalfAdder()

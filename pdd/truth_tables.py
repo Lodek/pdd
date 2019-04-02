@@ -78,3 +78,9 @@ AND_3in = TruthTable('a0 a1 a2'.split(), ['y'],
                       dict(a2=1, a1=0, a0=1, y=0),
                       dict(a2=1, a1=1, a0=0, y=0),
                       dict(a2=1, a1=1, a0=1, y=1)])
+
+BaseDecoder = TruthTable('a e'.split(), 'y0 y1'.split(),
+                         [dict(a=0, e=0, y0=0, y1=0),
+                          dict(a=0, e=1, y0=1, y1=0),
+                          dict(a=1, e=0, y0=0, y1=0),
+                          dict(a=1, e=1, y0=0, y1=1)])

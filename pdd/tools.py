@@ -1,6 +1,6 @@
 from dl import Bus
 
-def gen_output_table(circuit): 
+def gen_output_table(circuit, labels=[]): 
     """Return dictionary where keys are output labels and values are lists of
     signals for the given output bus based on the input (given by the index of 
     the list).
@@ -8,7 +8,9 @@ def gen_output_table(circuit):
     and record the current signal for each output"""
     state = circuit.auto_update
     circuit.auto_update = True
-    super_bus = Bus.merge(circuit.get_buses(circuit.input_labels))
+    if not labels:
+        labels = circuit.input_labels
+    super_bus = Bus.merge(circuit.get_buses(labels))
     generated_table = []
     for signal in super_bus.sweep():
         super_bus.signal = signal
@@ -17,21 +19,23 @@ def gen_output_table(circuit):
     circuit.auto_update = state
     return generated_table
 
-def gen_pretty_output_table(circuit, input_order=[]):
+def sweep(circuit, labels=[]): 
     """Return dictionary where keys are output labels and values are lists of
     signals for the given output bus based on the input (given by the index of 
     the list).
     Sequentially assign all possible values to input bus (given by 2 ** (num of inputs)),
     and record the current signal for each output"""
-    if not input_order:
-        input_order = circuit.input_labels
-    super_bus = Bus.merge(circuit.get_buses(input_order))
-    output_buses = {label: circuit.get_bus(label) for label in circuit.output_labels}
-    generated_table = {label : [] for label in circuit.output_labels}
+    state = circuit.auto_update
+    circuit.auto_update = True
+    if not labels:
+        labels = circuit.input_labels
+    super_bus = Bus.merge(circuit.get_buses(labels))
+    generated_table = []
     for signal in super_bus.sweep():
         super_bus.signal = signal
-        for label, bus in output_buses.items():
-            generated_table[label].append(circuit.terminals_state())
+        generated_table.append(circuit.state)
+
+    circuit.auto_update = state
     return generated_table
 
 
