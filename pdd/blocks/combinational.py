@@ -274,41 +274,49 @@ class BaseDecoder(BaseCircuit):
     """
     input_labels = "a e".split()
     output_labels = "y0 y1".split()
+    sizes = dict(e=1)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
-        y0_out = AND(a=i.a, b=i.e, bubbles=['a'])
-        y1_out = AND(a=i.a, b=i.e)
+        e_bus = i.e.branch(len(i.a))
+        y0_out = AND(a=i.a, b=e_bus, bubbles=['a'])
+        y1_out = AND(a=i.a, b=e_bus)
         self.set_outputs(y0=y0_out.y, y1=y1_out.y)
         
 class Decoder(BaseCircuit):
     """
-    Makes use of recursion to implement n-input decoder
+    Makes use of recursion to implement n-input decoder with a single
+    input port.
     """
-    def __init__(self, inputs, **kwargs):
-        self.input_labels = ['a{}'.format(i) for i in range(inputs)] + ['e']
-        self.output_labels = ['y{}'.format(i) for i in range(2**inputs)]
-        self.num_inputs = inputs
+    input_labels = 'a e'.split()
+    def __init__(self, **kwargs):
+        self.sizes = dict(e=1)
+        if 'a' in kwargs:
+            y_size = 2**len(kwargs['a'])
+        elif 'size' in kwargs:
+            y_size = 2**kwargs['size']
+        else: y_size = 2
+        self.output_labels = ['y'+str(i) for i in range(y_size)]
+        self.sizes.update({label:1 for label in self.output_labels})
         super().__init__(**kwargs)
+
+    @property
+    def y(self):
+        return Bus.merge(self.get_buses(self.output_labels))
 
     def make(self):
         """Recursive implementation inspired by implementation at
         https://www.tutorialspoint.com/digital_circuits/digital_circuits_decoders.htm"""
         i = self.get_inputs()
-        if self.num_inputs == 1:
-            dec = BaseDecoder(a=i.a0, e=i.e)
+        if self.sizes['a'] == 1:
+            dec = BaseDecoder(a=i.a, e=i.e)
             self.set_outputs(y0=dec.y0, y1=dec.y1)
         else:
-            dec_inputs = {'a'+str(n) : getattr(i, 'a'+str(n)) for n in range(0, self.num_inputs-1)}
-            last_bus = getattr(i, 'a'+str(self.num_inputs-1))
-            dec1 = Decoder(self.num_inputs-1, e=last_bus, **dec_inputs)
-            dec2 = Decoder(self.num_inputs-1, e=last_bus, bubbles=['e'], **dec_inputs)
-            num_outputs = int((2**self.num_inputs)/2)
-            outputs = {'y'+str(n) : getattr(dec1, 'y'+str(n)) for n in range(0, num_outputs)}
-            o2 = {'y'+str(n+num_outputs) : getattr(dec2, 'y'+str(n)) for n in range(0, num_outputs)}
-            outputs.update(o2)
-            self.set_outputs(**outputs)
+            enable_gate = AND(a=i.a, b=i.e.branch(len(i.a)))
+            dec1 = Decoder(a=enable_gate.y[:-1], e=enable_gate.y[-1], bubbles=['e'])
+            dec2 = Decoder(a=enable_gate.y[:-1], e=enable_gate.y[-1])
+            y_buses = {'y'+str(i) : bus for i, bus in enumerate(dec2.y + dec1.y)}
+            self.set_outputs(**y_buses)
 
-        

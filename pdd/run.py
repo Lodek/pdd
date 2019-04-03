@@ -11,3 +11,6 @@ import harris
 u = Wire.updater
 Wire.auto_update = True
 
+dec = cb.Decoder(size=3)
+dec.e.set()
+states = gen_output_table(dec, ['a'])

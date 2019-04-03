@@ -84,3 +84,9 @@ BaseDecoder = TruthTable('a e'.split(), 'y0 y1'.split(),
                           dict(a=0, e=1, y0=1, y1=0),
                           dict(a=1, e=0, y0=0, y1=0),
                           dict(a=1, e=1, y0=0, y1=1)])
+
+Decoder_1 = TruthTable('a0 e'.split(), 'y0 y1'.split(),
+                       [dict(a0=0, e=0, y0=0, y1=0),
+                        dict(a0=0, e=1, y0=1, y1=0),
+                        dict(a0=1, e=0, y0=0, y1=0),
+                        dict(a0=1, e=1, y0=0, y1=1)])
