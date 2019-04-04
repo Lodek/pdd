@@ -1,5 +1,5 @@
 export PYTHONPATH = ../pdd
-tests = test_core test_dl test_circuit test_blocks test_tools
+tests = test_core test_dl test_circuit test_blocks test_tools test_memory
 
 all: $(tests)
 

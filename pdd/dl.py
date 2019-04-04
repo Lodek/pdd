@@ -158,7 +158,8 @@ class Bus:
         """vdd extend self to length l"""
         return self.extend(1, l)
     
-    def _get_op_len(self, l):
+    @staticmethod
+    def _get_op_len(l):
         """DRY for methods that modify a bus to a length, return len of new Bus.
         l can be an integer value or a Bus.
         If l is a bus then len(l) > len(self) must be true and
@@ -166,8 +167,6 @@ class Bus:
         if type(l) is Bus:
             n = len(l)
         else: n = l
-        if len(self) > n:
-            raise ValueError('l must be greater than len(self)')
         return n
         
     @classmethod
@@ -181,7 +180,7 @@ class Bus:
     def vdd(cls, l=1):
         """Return VDD, a StaticWire, meaning that it is always 1. Optionally
         receive l, integer or Bus, which determines the length of the Bus."""
-        n = self._get_op_len(l)
+        n = cls._get_op_len(l)
         wires = [cls._vdd_wire] * n
         return cls._from_wires(wires)
 
@@ -189,7 +188,7 @@ class Bus:
     def gnd(cls, l=1):
         """Return GND, a StaticWire, meaning that it is always 0. Optionally
         receive l, integer or Bus, which determines the length of the Bus."""
-        n = self._get_op_len(l)
+        n = cls._get_op_len(l)
         wires = [cls._gnd_wire] * n
         return cls._from_wires(wires)
         
@@ -229,6 +228,10 @@ class Terminal:
         self.y = y if y else Bus(size)
         self.en = en if en else self.vdd
 
+    def __repr__(self):
+        s = '{}: a={}; b={}; en={}; bubble={};'
+        return s.format(self.__class__, self.a, self.b, self.en, self.bubble)
+        
     def _setter(self, attr, value, size):
         """DRY for setter methods. attr is a string, value is a Bus object.
         Checks that value is of type Bus and sets the attr"""
@@ -254,7 +257,7 @@ class Terminal:
             self.y.signal = sig if not self.bubble else sig.complement()
 
     def get_triggers(self):
-        return [self.a + self.en]
+        return self.a.wires + self.en.wires
 
 class BaseCircuit:
     """
@@ -298,6 +301,9 @@ class BaseCircuit:
 
         if 'bubbles' in kwargs:
             self.set_bubbles(**{label : True for label in kwargs['bubbles']})
+        if 'tristate' in kwargs:
+            self.set_tristate(**kwargs['tristate'])
+
 
         self.connect(**kwargs)
 
@@ -359,12 +365,10 @@ class BaseCircuit:
     def update_triggers(self):
         """Update the trigger Buses in the observer object"""
         self.updater.unsubscribe(self, self.triggers)
-        nested_wires = [terminal.a.wires for terminal in self.terminals.values()]
+        nested_wires = [terminal.get_triggers() for terminal in self.terminals.values()]
         self.triggers = [wire for wires in nested_wires for wire in wires]
         self.updater.subscribe(self, self.triggers)
-
         
-
     def make(self):
         """Make must be implemented by subclasses. The body of make contain the
         the creation of circuit blocks used by the class, the association between
@@ -377,7 +381,8 @@ class BaseCircuit:
         in self. The value of the attribute is the same as self.terminals[label].y
         Used as syntathic sugar which eases the job of writing make()."""
         buses = {label: self.terminals[label].y for label in self.input_labels}
-        return self.namedtuple_factory('Inputs', buses)
+        buses.update({label: self.terminals[label].a for label in self.output_labels})
+        return self.namedtuple_factory('Nodes', buses)
 
     def set_outputs(self, **kwargs):
         """Used to set the outputs of a circuit in make(). 
