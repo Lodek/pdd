@@ -133,7 +133,7 @@ class Updater:
     of calls per cycle in order to avoid deadlocks caused by improper circuits
     (e.g. unstable circuits or circuits with cyclic paths)
     """
-    def __init__(self, threshold=2**10):
+    def __init__(self, threshold=2**16):
         logger.info('Updater object created')
         self.threshold = threshold
         self.updating = False

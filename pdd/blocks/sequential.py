@@ -89,6 +89,24 @@ class ResetFlipFlop(BaseCircuit):
         reset_gate = AND(a=i.d, b=reset_bus, bubbles=['b'])
         flip = DFlipFlop(d=reset_gate.y, clk=i.clk)
         self.set_outputs(q=flip.q)
+
+
+class REFlipFlop(BaseCircuit):
+    """
+    
+    """
+    input_labels = "d clk reset en".split()
+    output_labels = "q".split()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        select_and = AND(inputs=3, a0=i.d, a1=i.en, a2=a.reset)
+        flip = DFlipFlop(d=i.d, clk=en_and.y)
+        self.set_outputs(q=flip.q)
+        
+
         
 class Counter(BaseCircuit):
     """
@@ -109,3 +127,34 @@ class Counter(BaseCircuit):
         adder = cb.CPA(a=flip.q, b=b_bus)
         flip.connect(d=adder.s)
         self.set_outputs(q=flip.q)
+       
+
+class ROM(BaseCircuit):
+    """
+    
+    """
+    input_labels = "addr clk en".split()
+    output_labels = "q".split()
+    def __init__(self, word_size, **kwargs):
+        self.word_size = word_size
+        self.sizes = dict(q=word_size, en=1, clk=1)
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        q_bus = self.terminals['q'].a
+        addr_decoder = cb.Decoder(a=i.addr, e=Bus.vdd())
+        self.set_tristate(q=i.en)
+        words = len(addr_decoder.y)
+        self.registers = [DFlipFlop(clk=i.clk, size=self.word_size) for _ in range(words)]
+        for flip, bus in zip(self.registers, addr_decoder.y):
+            flip.set_tristate(q=bus)
+            flip.connect(q=q_bus)
+        
+
+        
+        
+        
+
+        
+        

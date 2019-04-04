@@ -296,7 +296,11 @@ class BaseCircuit:
                 self.terminals[label].a = bus
             elif label in self.output_labels:
                 self.terminals[label].y = bus
+        if kwargs:
+            pass
+            #kwargs not empty, imaginary labels
         self.update_triggers()
+        self.update()
 
     def connect_sequence(self, seq):
         """Receive a sequence of buses and sequentially
@@ -305,9 +309,8 @@ class BaseCircuit:
         len(input_labels)"""
         if len(self.input_labels) != len(seq):
             raise ValueError('Not enough buses for all inputs')
-        for label, bus in zip(self.input_labels, seq):
-            self.terminals[label].a = bus
-        self.update_triggers()
+        connections = {label : bus for label, bus in zip(self.input_labels, seq)}
+        self.connect(**connections)
 
     def update_triggers(self):
         """Update the trigger Buses in the observer object"""
@@ -315,6 +318,7 @@ class BaseCircuit:
         nested_wires = [terminal.a.wires for terminal in self.terminals.values()]
         self.triggers = [wire for wires in nested_wires for wire in wires]
         self.updater.subscribe(self, self.triggers)
+
         
 
     def make(self):
@@ -340,6 +344,9 @@ class BaseCircuit:
             if label in self.output_labels:
                 self.terminals[label].a = bus 
         self.update_triggers()
+
+    def get_bubbles(self):
+        return {label : self.terminals[label].bubble for label in self.input_labels + self.output_labels}
 
     def set_bubbles(self, **kwargs):
         """Set bubbles in terminals present in kwargs.
@@ -394,6 +401,10 @@ class BaseCircuit:
         """Expect buses to be a sequence of strings corresponding to labels.
         returns a list with all the buses matching the labels"""
         return [self.get_bus(label) for label in buses]
+
+    def set_tristate(self, **kwargs):
+        for label, bus in kwargs.items():
+            self.terminals[label].en = bus
 
     @property
     def state(self):
