@@ -1,5 +1,5 @@
 from collections import namedtuple
-from core import Updater, Signal, Wire
+from core import Updater, Signal, Wire, StaticWire
 import warnings, logging
 
 logger = logging.getLogger(__name__)
@@ -26,8 +26,8 @@ class Bus:
     Two buses are equal if their signal are equal, len(bus) return the
     number of wires.
     """
-    _vdd_wire = Wire(1)
-    _gnd_wire = Wire(0)
+    _vdd_wire = StaticWire(1)
+    _gnd_wire = StaticWire(0)
     def __init__(self, n=1, signal=0):
         if n <= 0:
             raise ValueError('Bus size must be > 0')
@@ -129,7 +129,47 @@ class Bus:
             bits = Signal(value, len(self)).bits
         for wire, bit in zip(self.wires, bits):
             wire.bit = bit
-           
+
+    def sign_extend(self, l):
+        """Return a sign extended version of self of length l"""
+        n = self._get_op_len(l)
+        diff = n - len(self)
+        wires = self.wires + self.wires[-1] * diff
+        return self._from_wires(wires)
+        
+    def extend(self, value, l):
+        """Return an extended version of self with added padding
+        Padding will be either 0 or 1 given by value. l determines the len
+        of the new Bus"""
+        n = self._get_op_len(l)
+        diff = len(self) - n
+        if value == 0:
+            padding = [self._gnd_wire] * diff
+        if value == 1:
+            padding = [self._vdd_wire] * diff
+        wires = self.wires + padding
+        return self._from_wires(wires)
+
+    def zero_extend(self, l):
+        """Zero extend self to length l"""
+        return self.extend(0, l)
+
+    def vdd_extend(self, l):
+        """vdd extend self to length l"""
+        return self.extend(1, l)
+    
+    def _get_op_len(self, l):
+        """DRY for methods that modify a bus to a length, return len of new Bus.
+        l can be an integer value or a Bus.
+        If l is a bus then len(l) > len(self) must be true and
+        if l is an int l > len(self) otherwise raise ValueError"""
+        if type(l) is Bus:
+            n = len(l)
+        else: n = l
+        if len(self) > n:
+            raise ValueError('l must be greater than len(self)')
+        return n
+        
     @classmethod
     def _from_wires(cls, wires):
         """Initialize Bus from a sequence of wires"""
@@ -138,17 +178,19 @@ class Bus:
         return bus
  
     @classmethod
-    def vdd(cls, size=1):
-        """Return VDD, a wire that `should` always be High. Optioanlly
-        receives a size argument which determines the length of the Bus"""
-        wires = [cls._vdd_wire] * size
+    def vdd(cls, l=1):
+        """Return VDD, a StaticWire, meaning that it is always 1. Optionally
+        receive l, integer or Bus, which determines the length of the Bus."""
+        n = self._get_op_len(l)
+        wires = [cls._vdd_wire] * n
         return cls._from_wires(wires)
 
     @classmethod
-    def gnd(cls, size=1):
-        """Return VDD, a wire that `should` always be Low. Optioanlly
-        receives a size argument which determines the length of the Bus"""
-        wires = [cls._gnd_wire] * size
+    def gnd(cls, l=1):
+        """Return GND, a StaticWire, meaning that it is always 0. Optionally
+        receive l, integer or Bus, which determines the length of the Bus."""
+        n = self._get_op_len(l)
+        wires = [cls._gnd_wire] * n
         return cls._from_wires(wires)
         
     
@@ -211,6 +253,8 @@ class Terminal:
         if self.en == self.vdd:
             self.y.signal = sig if not self.bubble else sig.complement()
 
+    def get_triggers(self):
+        return [self.a + self.en]
 
 class BaseCircuit:
     """
