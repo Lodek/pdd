@@ -1,6 +1,6 @@
 import unittest, logging
 from collections import namedtuple
-from core import Signal, Updater, Wire
+from core import Signal, Updater, Wire, StaticWire
 
 class mockUpdater:
     events = []
@@ -23,6 +23,17 @@ class TestWire(unittest.TestCase):
         w.bit = 1
         self.assertTrue(w.updater.events != [])
         
+class TestStaticWire(unittest.TestCase):
+
+    def test_wire(self):
+        w = StaticWire(0)
+        self.assertEqual(w.bit, 0)
+        w = StaticWire(1)
+        self.assertEqual(w.bit, 1)
+        with self.assertRaises(TypeError):
+            w.bit = 0
+
+
 
 class TestSignal(unittest.TestCase):
 

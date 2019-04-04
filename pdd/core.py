@@ -32,6 +32,11 @@ class Wire:
     @property
     def bit(self):
         return self._bit
+    
+    def __repr__(self):
+        s = '{}: bit={}; id={}'
+        return s.format(self.__class__, self.bit, id(self))
+
 
     @bit.setter
     def bit(self, value):
@@ -43,6 +48,21 @@ class Wire:
         if self.auto_update and not self.updater.updating:
             self.updater.update()
         
+class StaticWire:
+    """
+    Like wire but does not support assignment.
+    Used exclusively for Bus.vdd and Bus.gnd.
+    """
+    def __init__(self, bit):
+        self._bit = bit
+
+    @property
+    def bit(self):
+        return self._bit
+    
+    @bit.setter
+    def bit(self, value):
+        raise TypeError('StaticWire does not support assignment')
 
 class Signal:
     """
