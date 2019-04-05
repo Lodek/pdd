@@ -91,3 +91,60 @@ class TruthTable:
         return True
 
         
+class SignalGen:
+    """"
+    Automated signal assignment to Buses. Dictionary of buses with labels for buses
+    are used along with a list of dicts with signals for these buses; eg.
+    buses = dict(a=Bus(), b=Bus())
+    signals = [dict(a=1, b=0), dict(a=0)]
+    That way SignalGen will assign the given signals sequentially at each cycle.
+    """
+    def __init__(self, buses, signals):
+        self.buses = buses
+        self.signals = signals
+        
+    def next(self):
+        """Call to next will assign the next dictionary of values to the bus
+        sequentially. next is a generator thus it is an iterable.
+        Return the dictionary of signals just assigned"""
+        for dic in self.signals:
+            for label, signal in dic:
+                self.buses[label].signal = signal
+            yield dic
+
+    def all(self):
+        """Applies all signals to the buses sequentially without stopping"""
+        for _ in self.next(): pass
+
+    def _clock_pulse(self):
+        """change signals and add a clock pulse to each dictionary"""
+        pass
+
+class IOHelper:
+
+    def remove_comments(self):
+        txt = self.text
+        r_str = r'#.*\n'
+        comp = re.compile(r_str)
+        clean_text = comp.sub('\n', txt)
+        
+    def parse_signals(self):
+        lines = [line for line in self.text.split('\n') if line]
+        labels = lines[0]
+        body = [line.split() for line in lines[1:]]
+        
+        dicter = lambda line :{label : int(signal) for label, signal in
+                               zip(labels, line) if '-' not in signal}
+        signals = [dicter(line) for line in body]
+        return signals
+        
+    def parse_memory(self):
+        return [int(line) for line in self.text.split() if line]
+
+
+    
+
+
+
+
+    
