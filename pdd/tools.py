@@ -1,5 +1,7 @@
 from dl import Bus
 
+import re
+
 def gen_output_table(circuit, labels=[]): 
     """Return dictionary where keys are output labels and values are lists of
     signals for the given output bus based on the input (given by the index of 
@@ -102,19 +104,23 @@ class SignalGen:
     def __init__(self, buses, signals):
         self.buses = buses
         self.signals = signals
+        self.next_q = []
         
     def next(self):
         """Call to next will assign the next dictionary of values to the bus
         sequentially. next is a generator thus it is an iterable.
         Return the dictionary of signals just assigned"""
-        for dic in self.signals:
-            for label, signal in dic:
-                self.buses[label].signal = signal
-            yield dic
+        if not self.next_q:
+            self.next_q = self.signals
+        dic = self.next_q.pop(0)
+        for label, signal in dic.items():
+            self.buses[label].signal = signal
+        return dic
+             
 
     def all(self):
         """Applies all signals to the buses sequentially without stopping"""
-        for _ in self.next(): pass
+        for _ in self.n(): pass
 
     def _clock_pulse(self):
         """change signals and add a clock pulse to each dictionary"""
@@ -122,29 +128,45 @@ class SignalGen:
 
 class IOHelper:
 
-    def remove_comments(self):
-        txt = self.text
+    @classmethod
+    def _remove_comments(cls, txt):
         r_str = r'#.*\n'
         comp = re.compile(r_str)
         clean_text = comp.sub('\n', txt)
+        return clean_text
+
+    @classmethod
+    def _get_text(cls, p):
+        with open(p) as f:
+            text = f.read()
+        return cls._remove_comments(text)
+
+    @classmethod
+    def _caster(cls, s):
+        s = s.lower()
+        if 'x' in s:
+            return int(s, 16)
+        elif 'b' in s:
+            return int(s, 2)
+        else:
+            return int(s)
         
-    def parse_signals(self):
-        lines = [line for line in self.text.split('\n') if line]
-        labels = lines[0]
+
+    @classmethod
+    def parse_signals(cls, p):
+        text = cls._get_text(p)
+
+        lines = [line for line in text.split('\n') if line]
+        labels = lines[0].split()
         body = [line.split() for line in lines[1:]]
         
-        dicter = lambda line :{label : int(signal) for label, signal in
-                               zip(labels, line) if '-' not in signal}
-        signals = [dicter(line) for line in body]
+        signals = []
+        for line in body:
+            d = {label : cls._caster(signal) for label, signal in zip(labels, line) if '-' not in signal}
+            signals.append(d)
         return signals
         
-    def parse_memory(self):
-        return [int(line) for line in self.text.split() if line]
-
-
-    
-
-
-
-
-    
+    @classmethod
+    def parse_memory(cls, p):
+        text = cls._get_text(p)
+        return [cls._caster(line) for line in text.split('\n') if line]
