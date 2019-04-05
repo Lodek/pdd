@@ -151,9 +151,12 @@ class ROM(BaseCircuit):
             flip.set_tristate(q=bus)
             flip.connect(q=q_bus)
        
+    def burn_rom(self, contents):
+        for word, register in zip(contents, self.registers):
+            register.d = word
 
 
-class BitCell(BaseCircuit):
+class MemoryCell(BaseCircuit):
     """
     
     """
@@ -168,7 +171,7 @@ class BitCell(BaseCircuit):
         mux = cb.SimpleMux(s=i.w, d1=i.d)
         mux.connect(d0=mux.y)
         flip = DFlipFlop(d=mux.y, clk=i.clk)
-        flip.set_tristate(q=i.en)
+        self.set_tristate(q=i.en)
         self.set_outputs(q=flip.q)
 
         
@@ -178,17 +181,17 @@ class RAM(BaseCircuit):
     """
     input_labels = "d clk addr w en".split()
     output_labels = "q".split()
+    sizes = dict(en=1, clk=1, w=1)
     def __init__(self, word_size, **kwargs):
         self.word_size = word_size
-        self.sizes = dict(q=word_size, en=1, clk=1, w=1, d=word_size)
+        self.sizes.update(q=word_size, d=word_size)
         super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
         self.set_tristate(q=i.en)
         addr_lines = cb.Decoder(a=i.addr, e=Bus.vdd())
-        cells = [BitCell(clk=i.clk, d=i.d, en=en_bus, q=i.q) for en_bus in addr_lines.y]
-        write_lines = cb.Decoder(a=i.addr, e=Bus.vdd())
-        write_gates = [AND(a=i.w, b=bus) for bus in write_lines.y]
+        cells = [MemoryCell(clk=i.clk, d=i.d, en=en_bus, q=i.q) for en_bus in addr_lines.y]
+        write_gates = [AND(a=i.w, b=bus) for bus in addr_lines.y]
         for gate, cell in zip(write_gates, cells):
             cell.connect(w=gate.y)
