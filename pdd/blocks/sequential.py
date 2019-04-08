@@ -1,9 +1,10 @@
 """
 Sequential Logic building blocks
 """
-from dl import BaseCircuit, Bus
 from blocks.combinational import AND, OR, XOR
 import blocks.combinational as cb
+from dl import BaseCircuit, Bus
+import tools
 
 class SRLatch(BaseCircuit):
     """
@@ -113,29 +114,38 @@ class Counter(BaseCircuit):
 
 class ROM(BaseCircuit):
     """
-    
+    Implementation of ROM. Use burn_rom method to assign values to rom.
+    Takes the memory word size as a parameter. The number of words in ROM is
+    give by the size of the addr bus.
     """
-    input_labels = "addr clk en".split()
+    input_labels = "addr ce".split()
     output_labels = "q".split()
     def __init__(self, word_size, **kwargs):
         self.word_size = word_size
-        self.sizes = dict(q=word_size, en=1, clk=1)
+        self.sizes = dict(q=word_size, ce=1)
         super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
-        q_bus = self.terminals['q'].a
+        W_bus = i.q
         addr_decoder = cb.Decoder(a=i.addr, e=Bus.vdd())
-        self.set_tristate(q=i.en)
+        self.set_tristate(q=i.ce)
         words = len(addr_decoder.y)
-        self.registers = [DFlipFlop(clk=i.clk, size=self.word_size) for _ in range(words)]
-        for flip, bus in zip(self.registers, addr_decoder.y):
-            flip.set_tristate(q=bus)
-            flip.connect(q=q_bus)
-       
-    def burn_rom(self, contents):
-        for word, register in zip(contents, self.registers):
-            register.d = word
+        self.cells = [OR(size=self.word_size) for _ in range(words)]
+        for cell, bus in zip(self.cells, addr_decoder.y):
+            cell.set_tristate(y=bus)
+            cell.connect(y=W_bus)
+
+    def fburn(self, f):
+        """Call IOHelper on f to open a file and get the memory contents
+        then burn the rom with the words in f"""
+        words = tools.IOHelper.parse_memory(f)
+        self.burn(words)
+        
+    def burn(self, contents):
+        """Assign word in contents sequentially to memory cells"""
+        for word, cell in zip(contents, self.cells):
+            cell.a = word
 
 
 class MemoryCell(BaseCircuit):

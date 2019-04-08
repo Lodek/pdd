@@ -1,11 +1,28 @@
-import unittest, logging, pdb
-from dl import Bus, Terminal
-from core import Signal
+from dl import Bus, BaseCircuit
 import blocks.sequential as sb
+import unittest, logging
 
+BaseCircuit.autoupdate = True
+
+
+class TestROM(unittest.TestCase):
+
+    def test_memory(self):
+        """Test ROM by assigning directly to the bit cells"""
+        words = 4
+        rom = sb.ROM(words, ce=Bus.vdd(), size=2)
+        signals = range(words)
+        rom.burn(signals)
+        for i in range(words):
+            rom.addr = i
+            self.assertEqual(int(rom.q.signal), i)
+
+    
 class TestMemoryCell(unittest.TestCase):
 
     def test_cell(self):
+        """Test memory cell by testing that it can be written to,
+        read and that tristate work"""
         cell = sb.MemoryCell(size=4)
         cell.auto_update = True
         cell.w.set()
@@ -21,6 +38,7 @@ class TestMemoryCell(unittest.TestCase):
 class TestRAM(unittest.TestCase):
 
     def test_ram(self):
+        """Test 4x4 memory array"""
         ram = sb.RAM(4, size=2)
         ram.d = 0xf
         ram.addr=1

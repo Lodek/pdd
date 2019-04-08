@@ -94,6 +94,17 @@ class SignalGen:
             d = {label: (value >> slice[0]) & (slice[1]) for label, slice in zip(labels, bus_slices)}
             signals.append(d)
         return cls(buses, signals)
+
+    @classmethod
+    def pulse(cls, bus, n):
+        """Receive a single bus and return SignalGen to pulse that bus
+        for n times"""
+        buses = dict(clk=bus)
+        period = [dict(clk=0), dict(clk=1)]
+        signals = []
+        for _ in range(n):
+            signals.extend(period)
+        return cls(buses, signals)
         
     def iterate(self):
         """Upon call returns generator object. Iteration sequentially assign
