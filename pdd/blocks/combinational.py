@@ -107,26 +107,6 @@ class SimpleMux(BaseCircuit):
         select_or = OR(a=d0_and.y, b=d1_and.y)
         self.set_outputs(y=select_or.y)
 
-
-
-class SimpleDecoder(BaseCircuit):
-    """
-    Simple 2 input, 4 output decoder
-    """
-    input_labels = 'a0 a1'.split()
-    output_labels = 'y0 y1 y2 y3'.split()
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        and0 = AND(a=i.a0, b=i.a1, bubbles='a b'.split())
-        and1 = AND(a=i.a0, b=i.a1, bubbles=['b'])
-        and2 = AND(a=i.a0, b=i.a1, bubbles=['a'])
-        and3 = AND(a=i.a0, b=i.a1)
-        self.set_outputs(y0=and0.y, y1=and1.y, y2=and2.y, y3=and3.y)
-
-
 class Mux(BaseCircuit):
     """
     Multiplexer circuit with 2 select lines
@@ -312,9 +292,9 @@ class Decoder(BaseCircuit):
             dec = BaseDecoder(a=i.a, e=i.e)
             self.set_outputs(y0=dec.y0, y1=dec.y1)
         else:
-            enable_gate = AND(a=i.a, b=i.e.branch(len(i.a)))
-            dec1 = Decoder(a=enable_gate.y[:-1], e=enable_gate.y[-1], bubbles=['e'])
-            dec2 = Decoder(a=enable_gate.y[:-1], e=enable_gate.y[-1])
-            y_buses = {'y'+str(i) : bus for i, bus in enumerate(dec2.y + dec1.y)}
+            dec1 = Decoder(a=i.a[:-1], e=i.a[-1], bubbles=['e'])
+            dec2 = Decoder(a=i.a[:-1], e=i.a[-1])
+            enable_gates = [AND(a=bus, b=i.e) for bus in dec2.y + dec1.y]
+            y_buses = {'y'+str(i) : gate.y for i, gate in enumerate(enable_gates)}
             self.set_outputs(**y_buses)
 

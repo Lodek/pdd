@@ -39,12 +39,7 @@ SimpleMux = TruthTable([dict(s=0, d1=0, d0=0, y=0),
                         dict(s=1, d1=1, d0=0, y=1),
                         dict(s=1, d1=1, d0=1, y=1)])
 
-SimpleDecoder = TruthTable([dict(a1=0, a0=0, y3=0, y2=0, y1=0, y0=1),
-                        dict(a1=0, a0=1, y3=0, y2=0, y1=1, y0=0),
-                        dict(a1=1, a0=0, y3=0, y2=1, y1=0, y0=0),
-                        dict(a1=1, a0=1, y3=1, y2=0, y1=0, y0=0)])
-                        
-
+                       
 HalfAdder = TruthTable([dict(a=0, b=0, cout=0, s=0),
                         dict(a=0, b=1, cout=0, s=1),
                         dict(a=1, b=0, cout=0, s=1),
