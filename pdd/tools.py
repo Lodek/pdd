@@ -1,5 +1,4 @@
 from dl import Bus
-
 import re
 
 def gen_output_table(circuit, labels=[]): 
@@ -105,6 +104,28 @@ class SignalGen:
         self.buses = buses
         self.signals = signals
         self.next_q = []
+
+    @classmethod
+    def sweep(cls, buses):
+        """From dict of buses, generate list of signals that sweep over all 
+        possible value for buses. Return instance of SignalGen with the list of
+        dictionaries as signals"""
+        labels = list(buses.keys())
+        listed_buses = [buses[label] for label in labels]
+        super_bus = Bus.merge(listed_buses)
+        #tuple of slices that will enable isolating the signal value for a bus at each time
+        #tuple consists of a right bitshift value and a mask to isolate the value of the signal
+        #for that particular bus
+        bus_slices = [(0, 2**len(listed_buses[0])-1)]
+        bus_slices += [(len(Bus.merge(listed_buses[:i+1])), 2**len(bus)-1) for i, bus in enumerate(listed_buses[1:])]
+
+        values = range(2**len(super_bus))
+        signals = [] 
+        for value in values:
+            d = {label: (value >> slice[0]) & (slice[1]) for label, slice in zip(labels, bus_slices)}
+            signals.append(d)
+        return cls(buses, signals)
+        
         
     def next(self):
         """Call to next will assign the next dictionary of values to the bus
@@ -125,6 +146,7 @@ class SignalGen:
     def _clock_pulse(self):
         """change signals and add a clock pulse to each dictionary"""
         pass
+
 
 class IOHelper:
 

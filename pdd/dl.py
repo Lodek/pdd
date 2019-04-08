@@ -68,6 +68,7 @@ class Bus:
     def merge(self, buses):
         """Return a unified Bus from a list of buses. buses[0] will
         represent the LSB of the resulting bus"""
+        buses = list(buses) #makes copy of buses
         bus = buses.pop()
         while buses:
             bus = bus + buses.pop()

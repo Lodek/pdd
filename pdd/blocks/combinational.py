@@ -275,8 +275,6 @@ class BaseDecoder(BaseCircuit):
     input_labels = "a e".split()
     output_labels = "y0 y1".split()
     sizes = dict(e=1)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()

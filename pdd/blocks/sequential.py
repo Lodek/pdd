@@ -58,21 +58,6 @@ class DFlipFlop(BaseCircuit):
         self.set_outputs(q=l2.q)
                     
 
-class EnableFlipFlop(BaseCircuit):
-    """
-    
-    """
-    input_labels = 'd clk en'.split()
-    output_labels = ['q']
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        en_and = AND(a=i.en, b=i.clk)
-        flip = DFlipFlop(d=i.d, clk=en_and.y)
-        self.set_outputs(q=flip.q)
-
 class ResetFlipFlop(BaseCircuit):
     """
     
@@ -91,19 +76,19 @@ class ResetFlipFlop(BaseCircuit):
         self.set_outputs(q=flip.q)
 
 
-class REFlipFlop(BaseCircuit):
+class ELFlipFlop(BaseCircuit):
     """
     
     """
-    input_labels = "d clk reset en".split()
+    input_labels = "d clk l e".split()
     output_labels = "q".split()
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
-        select_and = AND(inputs=3, a0=i.d, a1=i.en, a2=a.reset)
-        flip = DFlipFlop(d=i.d, clk=en_and.y)
+        select_mux = cb.SimpleMux(s=i.l, a1=i.d)
+        flip = DFlipFlop(d=select_mux.y, clk=i.clk)
+        select_mux.connect(a0=flip.q)
+        self.set_tristate(q=i.e)
         self.set_outputs(q=flip.q)
         
 
@@ -115,15 +100,12 @@ class Counter(BaseCircuit):
     input_labels = "clk reset".split()
     output_labels = "q".split()
     sizes = dict(clk=1, reset=1)
-    def __init__(self, word_size, **kwargs):
-        self.word_size = word_size
-        self.sizes.update({'q':word_size})
-        super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
-        flip = ResetFlipFlop(size=self.word_size, clk=i.clk, reset=i.reset)
-        b_bus = Bus.gnd(self.word_size -1) + Bus.vdd()
+        word_size = len(i.q)
+        flip = ResetFlipFlop(size=word_size, clk=i.clk, reset=i.reset)
+        b_bus = Bus.gnd(word_size -1) + Bus.vdd()
         adder = cb.CPA(a=flip.q, b=b_bus)
         flip.connect(d=adder.s)
         self.set_outputs(q=flip.q)

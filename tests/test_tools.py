@@ -50,6 +50,20 @@ class TestSignalGen(unittest.TestCase):
         gen.next()
         self.assertEqual(int(bus_b.signal), 4)
 
+    def test_sweep(self):
+        #use truthtable obj to test this
+        bus_a = Bus()
+        bus_b = Bus()
+        d = dict(a=bus_a, b=bus_b)
+        gen = SignalGen.sweep(d)
+
+    def test_sweep_multibit(self):
+        #same as above
+        ba = Bus(2)
+        bb = Bus(2)
+        d = dict(a=ba, b=bb)
+        gen = SignalGen.sweep(d)
+        
         
     
 if __name__ == '__main__':

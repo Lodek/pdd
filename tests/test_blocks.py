@@ -62,6 +62,13 @@ class TestGate(unittest.TestCase):
         circuit = AND(inputs=3)
         self._tester(circuit, truth_tables.AND_3in)
 
+class TestDecoder(unittest.TestCase):
+
+    def test_decoder(self):
+        circuit = cb.Decoder(size=3)
+        
+        
+
 if __name__ == '__main__':
     logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)
     unittest.main()

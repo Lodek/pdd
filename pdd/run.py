@@ -5,12 +5,11 @@ from dl import Bus
 from core import Wire
 from tools import *
 import logging
-import harris
+import sap
 
 #logging.basicConfig(filename=__file__+'.log', filemode='w', level=logging.DEBUG)
 u = Wire.updater
 Wire.auto_update = True
 
+rc = sap.RingCounter()
 
-rom = sb.ROM(8, size=4)
-rom.clk.pulse()
