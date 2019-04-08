@@ -47,48 +47,17 @@ class TruthTable:
     eg [dict(a=0, b=0, y=0), dict(a=0, b=1, y=1)]. Assume dict sweeps out
     all possible values for the inputs.
     """
-    def __init__(self, inputs, outputs, dicts):
-        self.inputs = sorted(inputs)
-        self.outputs = sorted(outputs)
-        if len(dicts) != 2 ** len(inputs):
-            raise ValueError('dict of index {} has missing values'.format(i))
-        self.dicts = dicts
-        self.table = []
-        self.listify_dicts()
-
-    def listify_dicts(self):
-        """Transform the list of state dicts into a list of lists.
-        Each output will have its own list and the order of the values
-        are given by the get_index function."""
-        for output in self.outputs:
-            self.table.append([0] * 2**len(self.inputs))
-
-        index_lookup = {label : i for i, label in enumerate(self.outputs)}
-        for d in self.dicts:
-            i = self.get_index(d)
-            for label, index in index_lookup.items():
-                self.table[index][i] = d[label]
-
-    def get_index(self, dict):
-        """Given a dictionary representing the state, return an
-        integer which is the index of that state in the list of
-        outputs. Bitshifts values as to form a number which matches
-        the combination of inputs"""
-        bit_rep = {label : i for i, label in enumerate(self.inputs)}
-        index = 0
-        for label, i in bit_rep.items():
-            index = index | dict[label] << i
-        return index
+    def __init__(self, dicts):
+       self.dicts = dicts
 
     def __eq__(self, other):
         """Two TruthTables are equal if their input labels,
         output labels and table are equal"""
-        if not self.inputs == other.inputs:
+        if len(self.dicts) != len(other.dicts):
             return False
-        if not self.outputs == other.outputs:
-            return False
-        if not self.table == other.table:
-            return False
+        for d in self.dicts:
+            if d not in other.dicts:
+                return False
         return True
 
         
