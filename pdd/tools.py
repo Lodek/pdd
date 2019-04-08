@@ -95,6 +95,14 @@ class SignalGen:
             signals.append(d)
         return cls(buses, signals)
         
+    def iterate(self):
+        """Upon call returns generator object. Iteration sequentially assign
+        signals in list of signals. Yield the dictionary of signals assigned"""
+        for dic in self.signals:
+            for label, signal in dic.items():
+                self.buses[label].signal = signal
+            yield dic
+           
         
     def next(self):
         """Call to next will assign the next dictionary of values to the bus
