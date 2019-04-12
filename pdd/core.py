@@ -62,7 +62,9 @@ class StaticWire:
     
     @bit.setter
     def bit(self, value):
-        raise TypeError('StaticWire does not support assignment')
+        e = TypeError('StaticWire does not support assignment')
+        logger.exception(e)
+        raise e
 
 class Signal:
     """

@@ -143,7 +143,7 @@ class Bus:
         Padding will be either 0 or 1 given by value. l determines the len
         of the new Bus"""
         n = self._get_op_len(l)
-        diff = len(self) - n
+        diff = n - len(self)
         if value == 0:
             padding = [self._gnd_wire] * diff
         if value == 1:
@@ -219,8 +219,9 @@ class Terminal:
     given at init.
     """
     vdd = Bus.vdd()
-    def __init__(self, size, a=None, y=None, en=None, bubble=False):
+    def __init__(self, size, label, a=None, y=None, en=None, bubble=False):
         self.size = size
+        self.label = label
         self._a = None
         self._y = None
         self._en = None
@@ -230,16 +231,21 @@ class Terminal:
         self.en = en if en else self.vdd
 
     def __repr__(self):
-        s = '{}: a={}; b={}; en={}; bubble={};'
-        return s.format(self.__class__, self.a, self.b, self.en, self.bubble)
+        s = '{}: label={}; a={}; y={}; en={}; bubble={};'
+        return s.format(self.__class__, self.label, self.a, self.y, self.en, self.bubble)
         
     def _setter(self, attr, value, size):
         """DRY for setter methods. attr is a string, value is a Bus object.
         Checks that value is of type Bus and sets the attr"""
+        logger.info(f'Setting {self} {attr} connection with {value}')
         if type(value) is not Bus:
-            raise TypeError('Terminal attributes must be Buses')
+            e = TypeError('Terminal attributes must be Buses')
+            logger.exeception(repr(self), e)
+            raise e
         elif len(value) != size:
-            raise ValueError('Bus size incompatible with Terminal')
+            e = ValueError('Bus size incompatible with Terminal')
+            logger.exeception(repr(self), e)
+            raise e
         else:
             self.__dict__['_'+attr] = value
 
@@ -253,8 +259,9 @@ class Terminal:
 
     def propagate(self):
         """Transmit the signal from the in_bus to the out bus if Bus is connected"""
+        logger.debug(f'Propagate {repr(self)}')
         sig = self.a.signal
-        if self.en == self.vdd:
+        if self.en.signal == self.vdd.signal:
             self.y.signal = sig if not self.bubble else sig.complement()
 
     def get_triggers(self):
@@ -279,9 +286,7 @@ class BaseCircuit:
         self.parent = None
         self.children = []
         try:
-            if not type(self.sizes) is dict:
-                #????????????????
-                self.sizes = {}
+            self.sizes = dict(self.sizes)
         except AttributeError:
             self.sizes = {}
         
@@ -298,7 +303,7 @@ class BaseCircuit:
                 warnings.warn('No circuit data size given. Setting it to 1')
         d = {label : size for label in labels if label not in self.sizes}
         self.sizes.update(d)
-        self.terminals = {label : Terminal(size) for label, size in self.sizes.items()}
+        self.terminals = {label : Terminal(size, label) for label, size in self.sizes.items()}
 
         if 'bubbles' in kwargs:
             self.set_bubbles(**{label : True for label in kwargs['bubbles']})
@@ -342,6 +347,7 @@ class BaseCircuit:
         self.set_parent(self.parent)
         
     def connect(self, **kwargs):
+        logger.debug(f'connecting {self}')
         for label, bus in kwargs.items():
             if label in self.input_labels:
                 self.terminals[label].a = bus

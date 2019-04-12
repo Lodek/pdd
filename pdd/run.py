@@ -7,9 +7,14 @@ from tools import *
 import logging
 import sap
 
-#logging.basicConfig(filename=__file__+'.log', filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename=__file__+'.log', filemode='w', level=logging.DEBUG)
+
 u = Wire.updater
 Wire.auto_update = True
 
-rc = sap.RingCounter()
+#cu = sap.ControlUnit(size=4)
+
+#cu.d = 0x0
+#gen = SignalGen.pulse(cu.clk, 10)
+#signals = [cu.state for _ in gen.iterate()]
 

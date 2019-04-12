@@ -83,10 +83,10 @@ class ELFlipFlop(BaseCircuit):
     """
     input_labels = "d clk l e".split()
     output_labels = "q".split()
-
+    sizes = dict(clk=1, l=1, e=1)
     def make(self):
         i = self.get_inputs()
-        select_mux = cb.SimpleMux(s=i.l, a1=i.d)
+        select_mux = cb.SimpleMux(s=i.l, d1=i.d)
         flip = DFlipFlop(d=select_mux.y, clk=i.clk)
         select_mux.connect(a0=flip.q)
         self.set_tristate(q=i.e)
@@ -187,3 +187,21 @@ class RAM(BaseCircuit):
         write_gates = [AND(a=i.w, b=bus) for bus in addr_lines.y]
         for gate, cell in zip(write_gates, cells):
             cell.connect(w=gate.y)
+
+class SettableCounter(BaseCircuit):
+    """
+    
+    """
+    input_labels = "d l clr clk".split()
+    output_labels = "q".split()
+    sizes = dict(l=1, clr=1, clk=1)
+
+    def make(self):
+        i = self.get_inputs()
+        word_size = len(i.d)
+        mux = cb.SimpleMux(d1=i.d, s=i.l)
+        flip = sb.ResetFlipFlop(d=mux.y, clk=i.clk, reset=i.clr)
+        adder = cb.CPA(a=flip.q, b=Bus(word_size, 1))
+        mux.connect(d0=adder.s)
+        self.set_outputs(q=flip.q)
+
