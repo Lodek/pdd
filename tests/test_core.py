@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+import base_tester
 import unittest, logging
 from collections import namedtuple
 from core import Signal, Updater, Wire, StaticWire

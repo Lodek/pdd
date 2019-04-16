@@ -23,7 +23,6 @@ class Wire:
     def __init__(self, bit=0):
         self._bit = 0
         self.bit = bit
-        logger.debug(repr(self))
 
     def __repr__(self):
         s = '{}: bit={}; id={}'

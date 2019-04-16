@@ -1,18 +1,23 @@
 #!/usr/bin/env python
 import base_tester
 import unittest, logging
-from dl import Bus
-from blocks import *
+from blocks.combinational import *
+from tools import TruthTable, SignalGen
 import truth_tables
-from tools import gen_output_table, TruthTable
+from core import Wire
 
-class TestGate(unittest.TestCase):
+Wire.auto_update = True
 
+class BaseCircuitTester(unittest.TestCase):
     def _tester(self, circuit, truth_table):
-        generated_table = TruthTable(circuit.input_labels, circuit.output_labels, 
-                                     gen_output_table(circuit))
+        gen = SignalGen.sweep_circuit(circuit)
+        states = [circuit.state_int for _ in gen.iterate()]
+        generated_table = TruthTable(states)
         self.assertEqual(truth_table, generated_table)
-                
+
+
+class TestGate(BaseCircuitTester):
+               
     def test_AND(self):
         """Test AND gate"""
         g = AND()
@@ -40,36 +45,33 @@ class TestGate(unittest.TestCase):
         g = OR(bubbles=['y'])
         self._tester(g, truth_tables.NOR)
 
-    def test_SimpleMux(self):
-        circuit = cb.SimpleMux()
-        self._tester(circuit, truth_tables.SimpleMux)
-
-    def test_BaseDecoder(self):
-        circuit = cb.BaseDecoder()
-        self._tester(circuit, truth_tables.BaseDecoder)
-
-    def test_Decoder_one_input(self):
-        circuit = cb.Decoder(1)
-        self._tester(circuit, truth_tables.Decoder_1)
-
-    def test_HalfAdder(self):
-        circuit = cb.HalfAdder()
-        self._tester(circuit, truth_tables.HalfAdder)
-
-    def test_FullAdder(self):
-        circuit = cb.FullAdder()
-        self._tester(circuit, truth_tables.FullAdder)
-
     def test_3input_and(self):
         circuit = AND(inputs=3)
         self._tester(circuit, truth_tables.AND_3in)
 
-class TestDecoder(unittest.TestCase):
 
-    def test_decoder(self):
-        circuit = cb.Decoder(size=3)
-        
+class TestCombinationalBlocks(BaseCircuitTester):
+
+    def test_BaseMux(self):
+        circuit = BaseMux()
+        self._tester(circuit, truth_tables.SimpleMux)
+
+    def test_BaseDecoder(self):
+        circuit = BaseDecoder()
+        self._tester(circuit, truth_tables.BaseDecoder)
+
+
+class ArithmeticCircuit(BaseCircuitTester):
+
+    def test_HalfAdder(self):
+        circuit = HalfAdder()
+        self._tester(circuit, truth_tables.HalfAdder)
+
+    def test_FullAdder(self):
+        circuit = FullAdder()
+        self._tester(circuit, truth_tables.FullAdder)
+
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)
+    #logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)
     unittest.main()

@@ -1,58 +1,17 @@
 from dl import Bus
 import re
 
-def gen_output_table(circuit, labels=[]): 
-    """Return dictionary where keys are output labels and values are lists of
-    signals for the given output bus based on the input (given by the index of 
-    the list).
-    Sequentially assign all possible values to input bus (given by 2 ** (num of inputs)),
-    and record the current signal for each output"""
-    state = circuit.auto_update
-    circuit.auto_update = True
-    if not labels:
-        labels = circuit.input_labels
-    super_bus = Bus.merge(circuit.get_buses(labels))
-    generated_table = []
-    for signal in super_bus.sweep():
-        super_bus.signal = signal
-        generated_table.append(circuit.state_int)
-
-    circuit.auto_update = state
-    return generated_table
-
-def sweep(circuit, labels=[]): 
-    """Return dictionary where keys are output labels and values are lists of
-    signals for the given output bus based on the input (given by the index of 
-    the list).
-    Sequentially assign all possible values to input bus (given by 2 ** (num of inputs)),
-    and record the current signal for each output"""
-    state = circuit.auto_update
-    circuit.auto_update = True
-    if not labels:
-        labels = circuit.input_labels
-    super_bus = Bus.merge(circuit.get_buses(labels))
-    generated_table = []
-    for signal in super_bus.sweep():
-        super_bus.signal = signal
-        generated_table.append(circuit.state)
-
-    circuit.auto_update = state
-    return generated_table
-
-
 class TruthTable:
     """
-    Abstraction of a truth table. Receive list of inputs and outputs (string for labels),
-    and a list of dictionary. Each dict is a row in the truth table.
-    eg [dict(a=0, b=0, y=0), dict(a=0, b=1, y=1)]. Assume dict sweeps out
-    all possible values for the inputs.
+    Simple abstraction for a truthtable. Truth table is modelled as a list of
+    dictionaries, each row in the table correspond to a dictionary.
+    Equality of the given list ignores order, checks whether each element is
+    in the other list. If both lists have the same dicts, the tables are equal.
     """
     def __init__(self, dicts):
        self.dicts = dicts
 
     def __eq__(self, other):
-        """Two TruthTables are equal if their input labels,
-        output labels and table are equal"""
         if len(self.dicts) != len(other.dicts):
             return False
         for d in self.dicts:
@@ -60,7 +19,6 @@ class TruthTable:
                 return False
         return True
 
-        
 class SignalGen:
     """"
     Automated signal assignment to Buses. Dictionary of buses with labels for buses
@@ -73,6 +31,14 @@ class SignalGen:
         self.buses = buses
         self.signals = signals
         self.next_q = []
+
+    @classmethod
+    def sweep_circuit(cls, circuit):
+        """From circuit generate a list of signals that sweep over all
+        possible value for circuit's input buses, return signalgen object 
+        with those values"""
+        buses = {label : circuit.get_bus(label) for label in circuit.input_labels}
+        return cls.sweep(buses)
 
     @classmethod
     def sweep(cls, buses):

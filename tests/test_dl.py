@@ -1,3 +1,4 @@
+import base_tester
 import unittest, logging, pdb
 from dl import Bus, Terminal
 from core import Signal
@@ -68,11 +69,43 @@ class TestBus(unittest.TestCase):
         buses = a.split()
         for i, bus in enumerate(buses):
             self.assertEqual(a[i].signal, bus.signal)
+
+    def test_get_op_len(self):
+        """Test that op len enables bus methods to operate on both a length and
+        a Bus"""
+        b = Bus(1,1)
+        b2 = Bus(4)
+        branched = b.branch(4)
+        self.assertEqual(len(branched), 4)
+        branched = b.branch(b2)
+        self.assertEqual(len(branched), 4)
+        
+
+    def test_sign_extend(self):
+        """Test sign extension of Bus"""
+        b = Bus(2, 3)
+        seb = b.sign_extend(4)
+        self.assertEqual(len(seb), 4)
+        self.assertEqual(int(seb.signal), 15)
+        b.signal = 1
+        self.assertEqual(int(seb.signal), 1)
+        
+    def test_zero_extend(self):
+        b = Bus(2, 3)
+        seb = b.zero_extend(4)
+        self.assertEqual(len(seb), 4)
+        self.assertEqual(int(seb.signal), 3)
+
+    def test_vdd_extend(self):
+        b = Bus(2, 1) #0b01
+        seb = b.vdd_extend(4) #0b1101
+        self.assertEqual(len(seb), 4)
+        self.assertEqual(int(seb.signal), 13)
             
     
 class TestTerminal(unittest.TestCase):
     def setUp(self):
-        self.t = Terminal(1)
+        self.t = Terminal(1, 'test')
         a = Bus(1, 1)
         y = Bus(1, 0)
         self.t.a = a
@@ -107,5 +140,4 @@ class TestTerminal(unittest.TestCase):
 
     
 if __name__ == '__main__':
-    logging.basicConfig(filename='digital_logic.log', filemode='w', level=logging.DEBUG)
     unittest.main()

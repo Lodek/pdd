@@ -1,3 +1,4 @@
+import base_tester
 import unittest, logging
 import truth_tables
 from tools import TruthTable, IOHelper, SignalGen

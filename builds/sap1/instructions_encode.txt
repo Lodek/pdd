@@ -1,0 +1,16 @@
+0 #LDA instruction = 0
+1 #ADD instruction = 1
+0b10 #SUB instruction = 2
+0 
+0
+0
+0
+0
+0
+0
+0
+0
+0
+3 #OUT instruction = 0xE
+0
+0

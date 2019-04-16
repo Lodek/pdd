@@ -82,6 +82,28 @@ def OR(inputs=2, **kwargs):
     elif inputs > 2:
         return nGate(inputs, op=Gate.OR, **kwargs)
 
+class BaseMux(BaseCircuit):
+    """
+    Basic 2:1 multiplexer. 
+    inputs: s, d0, d1
+    outputs: y
+    d0 when s=0
+    d1 when s=1
+    """
+    input_labels = 's d0 d1'.split()
+    output_labels = 'y'.split()
+    sizes = dict(s=1)
+
+    def make(self):
+        i = self.get_inputs()
+        #Eqt for d0_and = d0~s
+        branched_s = i.s.branch(len(i.d0))
+        d0_and = AND(a=i.d0, b=branched_s, bubbles=['b'])
+        #Eqt for d0_and = d1s
+        d1_and = AND(a=i.d1, b=branched_s)
+        select_or = OR(a=d0_and.y, b=d1_and.y)
+        self.set_outputs(y=select_or.y)
+
 
 class SimpleMux(BaseCircuit):
     """

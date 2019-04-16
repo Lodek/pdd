@@ -1,3 +1,4 @@
+import base_tester
 from tools import TruthTable
 
 OR = TruthTable([dict(a=0, b=0, y=0),
@@ -30,7 +31,7 @@ XNOR = TruthTable([dict(a=0, b=0, y=1),
                    dict(a=1, b=0, y=0),
                    dict(a=1, b=1, y=1)])
 
-SimpleMux = TruthTable([dict(s=0, d1=0, d0=0, y=0),
+BaseMux = TruthTable([dict(s=0, d1=0, d0=0, y=0),
                         dict(s=0, d1=0, d0=1, y=1),
                         dict(s=0, d1=1, d0=0, y=0),
                         dict(s=0, d1=1, d0=1, y=1),

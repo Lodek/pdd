@@ -52,7 +52,23 @@ class Bus:
     def __eq__(self, other):
         #I feel like I shouldn't do that. Buses can't be "equal"
         return True if self.signal == other.signal else False
-    
+
+    @property
+    def signal(self):
+        """Returns Signal object for bus"""
+        return Signal.from_wires(self.wires)
+        
+    @signal.setter
+    def signal(self, value):
+        """Assigns a new Signal to the bus and notifies the updater"""
+        new_signal = value if type(value) is Signal else Signal(value, len(self))
+        if self.signal == new_signal:
+            return
+        else:
+            for wire, bit in zip(self.wires, new_signal.bits):
+                wire.bit = bit
+
+   
     def __add__(self, other):
         """Add Bus objects by combining wires. If operation is A + B,
         the result is a Bus where A is the MSB and B is LSB, that is
@@ -81,9 +97,21 @@ class Bus:
         for i in range(2 ** len(self)):
             yield i
 
-    def branch(self, n):
+    @staticmethod
+    def _get_op_len(l):
+        """DRY for methods that modify a bus to a length, return len of new Bus.
+        l can be an integer value or a Bus.
+        If l is a bus then len(l) > len(self) must be true and
+        if l is an int l > len(self) otherwise raise ValueError"""
+        if type(l) is Bus:
+            n = len(l)
+        else: n = l
+        return n
+ 
+    def branch(self, l):
         """Branche a Bus into a Bus of length n. Analogous to making a Bus
-        out of the same wire. Assume Bus is of length 1"""
+        out of the same wire. Always branch the 0th wire"""
+        n = self._get_op_len(l)
         wire = self.wires[0]
         wires = [wire] * n
         return self._from_wires(wires)
@@ -108,34 +136,12 @@ class Bus:
         buses = [self._from_wires([wire]) for wire in self.wires]
         return buses
 
-    @property
-    def signal(self):
-        """Returns Signal object for bus"""
-        return Signal.from_wires(self.wires)
-        
-    @signal.setter
-    def signal(self, value):
-        """Assigns a new Signal to the bus and notifies the updater"""
-        #should I check for other types of value? What if user gives a string?
-        #should I handle that here or at signal?
-        try:
-            v = value.value
-        except AttributeError:
-            v = value
-        if v == self.signal.value:
-            return
-        if type(value) == Signal:
-            bits = value.bits
-        else:
-            bits = Signal(value, len(self)).bits
-        for wire, bit in zip(self.wires, bits):
-            wire.bit = bit
-
     def sign_extend(self, l):
-        """Return a sign extended version of self of length l"""
+        """Return a sign extended version of self of length l by padding bus
+        with the MSB"""
         n = self._get_op_len(l)
         diff = n - len(self)
-        wires = self.wires + self.wires[-1] * diff
+        wires = self.wires + [self.wires[-1]] * diff
         return self._from_wires(wires)
         
     def extend(self, value, l):
@@ -159,17 +165,7 @@ class Bus:
         """vdd extend self to length l"""
         return self.extend(1, l)
     
-    @staticmethod
-    def _get_op_len(l):
-        """DRY for methods that modify a bus to a length, return len of new Bus.
-        l can be an integer value or a Bus.
-        If l is a bus then len(l) > len(self) must be true and
-        if l is an int l > len(self) otherwise raise ValueError"""
-        if type(l) is Bus:
-            n = len(l)
-        else: n = l
-        return n
-        
+       
     @classmethod
     def _from_wires(cls, wires):
         """Initialize Bus from a sequence of wires"""
@@ -240,11 +236,11 @@ class Terminal:
         logger.info(f'Setting {self} {attr} connection with {value}')
         if type(value) is not Bus:
             e = TypeError('Terminal attributes must be Buses')
-            logger.exeception(repr(self), e)
+            logger.exception(repr(self))
             raise e
         elif len(value) != size:
             e = ValueError('Bus size incompatible with Terminal')
-            logger.exeception(repr(self), e)
+            logger.exception(repr(self))
             raise e
         else:
             self.__dict__['_'+attr] = value
@@ -487,3 +483,8 @@ class BaseCircuit:
         Wire.auto_update = value
 
 BaseCircuit.parent = BaseCircuit
+
+
+
+
+
