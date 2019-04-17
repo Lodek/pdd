@@ -105,49 +105,36 @@ class BaseMux(BaseCircuit):
         self.set_outputs(y=select_or.y)
 
 
-class SimpleMux(BaseCircuit):
-    """
-    Basic 2:1 multiplexer. 
-    inputs: s, d0, d1
-    outputs: y
-    d0 when s=0
-    d1 when s=1
-    """
-    def __init__(self, **kwargs):
-        self.input_labels = 's d0 d1'.split()
-        self.output_labels = ['y']
-        self.sizes = {'s' : 1}
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        #Eqt for d0_and = d0~s
-        branched_s = i.s.branch(len(i.d0))
-        d0_and = AND(a=i.d0, b=branched_s, bubbles=['b'])
-        #Eqt for d0_and = d1s
-        d1_and = AND(a=i.d1, b=branched_s)
-        select_or = OR(a=d0_and.y, b=d1_and.y)
-        self.set_outputs(y=select_or.y)
-
 class Mux(BaseCircuit):
     """
-    Multiplexer circuit with 2 select lines
+    
     """
-    input_labels = 'd0 d1 d2 d3 s'.split()
-    output_labels = ['y']
-    sizes = dict(s=2)
-    def __init__(self, **kwargs):
+    output_labels = 'y'.split()
+    def __init__(self, select_len=None, **kwargs):
+        if not select_len:
+            try:
+                select_len = len(kwargs['s'])
+            except KeyError:
+                raise ValueError('Multiplexer needs select_len or s bus')
+        self.input_labels = ['s'] + ['d'+str(i) for i in range(2 ** select_len)]
+        self.sizes = dict(s=select_len)
         super().__init__(**kwargs)
 
     def make(self):
-        #this be confuse, I thought it would be much simpler
-        #Harris pg 85 for diagream on hierarchical n-select multiplexer implementation
         i = self.get_inputs()
-        mux_1 = SimpleMux(d0=i.d0, d1=i.d1, s=i.s[0])
-        mux_2 = SimpleMux(d0=i.d2, d1=i.d3, s=i.s[0])
-        mux_3 = SimpleMux(d0=mux_1.y, d1=mux_2.y, s=i.s[1])
-        self.set_outputs(y=mux_3.y)
-
+        mux_by_depth = lambda n : int((2 ** len(i.s)) / (2 * (n + 1)))
+        layers = []
+        for n, b in enumerate(i.s):
+            muxes = [BaseMux(s=b, d0=i.d0) for _ in range(mux_by_depth(n))]
+            layers.append(muxes)
+        output_previous = [(d0, d1) for d0, d1 in zip(i[1::2], i[2::2])] 
+        for muxes  in layers:
+            for buses , mux in zip(output_previous, muxes):
+                mux.connect(d0=buses[0], d1=buses[1])
+            if len(muxes) > 1:
+                output_previous = [(d0_mux.y, d1_mux.y) for d0_mux, d1_mux in zip(muxes[::2], muxes[1::2])]
+        self.set_outputs(y=layers[-1][0].y)
+        
 class HalfAdder(BaseCircuit):
     """
     
@@ -190,8 +177,6 @@ class CPA(BaseCircuit):
     input_labels = "a b cin".split()
     output_labels = "s cout".split()
     sizes = dict(cin=1, cout=1)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
@@ -216,8 +201,6 @@ class Subtractor(BaseCircuit):
     input_labels = "a b".split()
     output_labels = "s".split()
     sizes = dict(cout=1)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
@@ -232,8 +215,6 @@ class EqualityComparator(BaseCircuit):
     input_labels = "a b".split()
     output_labels = "eq".split()
     sizes = dict(eq=1)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
@@ -253,17 +234,14 @@ class Comparator(BaseCircuit):
     sizes = {label:1 for label in output_labels}
     bubbles = {label : True for label in 'neq lte gte'.split()}
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def make(self):
         i = self.get_inputs()
         eq = EqualityComparator(a=i.a, b=i.b)
         neq = EqualityComparator(a=i.a, b=i.b, bubbles=['eq'])
         lt = Subtractor(a=i.a, b=i.b) # MSB of A-B 1 if A < B
-        gte = Subtractor(a=i.a, b=i.b, bubbles=['s']) # MSB of A-B 0 if A < B, so we bubble it
-        gt = Subtractor(a=i.b, b=i.a) #MSB of B-A 1 if B < A
-        lte = Subtractor(a=i.b, b=i.a, bubbles=['s']) #MSB of B-A 0 if B >= A, so we bubble it
+        gte = Subtractor(a=i.a, b=i.b, bubbles=['s']) # MSB of A-B 0 if A >= B, so we bubble it
+        gt = Subtractor(a=i.b, b=i.a) #MSB of B-A 1 if A > B
+        lte = Subtractor(a=i.b, b=i.a, bubbles=['s']) #MSB of B-A 0 if A <= B, so we bubble it
         self.set_outputs(eq=eq.eq, neq=neq.eq,
                          lt=lt.s[-1], gte=gte.s[-1],
                          gt=gt.s[-1], lte=lte.s[-1])
