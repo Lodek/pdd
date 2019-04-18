@@ -8,12 +8,11 @@ import tools
 
 class SRLatch(BaseCircuit):
     """
-    
+    Classic SRLatch implementation using 2 NOR gates cross connected.
+    SRLatches are the fundamental building block of Sequential circuits.
     """
     input_labels = 's r'.split()
     output_labels = 'q q_bar'.split()
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
@@ -25,17 +24,17 @@ class SRLatch(BaseCircuit):
 
 class DLatch(BaseCircuit):
     """
-    
+    DLatch adds combinational logic to the SRLatch to make it more useful.
+    When clk is high the signal at d is propagated to q, else q is unchaged.
+    clk bus must be of size 1
     """
     input_labels = 'd clk'.split()
     output_labels = ['q']
     sizes = dict(clk=1)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
-        clk = i.clk.branch(self.sizes['d'])
+        clk = i.clk.branch(i.d)
         reset_gate = AND(a=clk, b=i.d, bubbles=['b'])
         set_gate = AND(a=clk, b=i.d)
         sr = SRLatch(s=set_gate.y, r=reset_gate.y)
@@ -44,13 +43,13 @@ class DLatch(BaseCircuit):
         
 class DFlipFlop(BaseCircuit):
     """
-    
+    In practice DLatches aren't used often. If d changes while clk is high, the
+    change propagates to q. FlipFlops only propagate d to q at the 
+    rising edge of the clock.
     """
     input_labels = 'd clk'.split()
     output_labels = ['q']
     sizes = dict(clk=1)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def make(self):
         i = self.get_inputs()
@@ -59,134 +58,46 @@ class DFlipFlop(BaseCircuit):
         self.set_outputs(q=l2.q)
                     
 
-class ResetFlipFlop(BaseCircuit):
+class FlipFlop(BaseCircuit):
     """
-    
+    There are many variations of flip flops. Resetable flip flops, enable flip flops,
+    tri-stated output flipflops. This impelementation implements all of the above.
+    e and l are active low, r is active high
     """
-    input_labels = "d clk reset".split()
+    input_labels = "r e clk l d".split()
     output_labels = "q".split()
-    sizes = dict(clk=1, reset=1)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    sizes = dict(r=1, e=1, clk=1, l=1)
 
     def make(self):
         i = self.get_inputs()
-        reset_bus = i.reset.branch(len(i.d))
-        reset_gate = AND(a=i.d, b=reset_bus, bubbles=['b'])
-        flip = DFlipFlop(d=reset_gate.y, clk=i.clk)
-        self.set_outputs(q=flip.q)
-
-
-class ELFlipFlop(BaseCircuit):
-    """
-    
-    """
-    input_labels = "d clk l e".split()
-    output_labels = "q".split()
-    sizes = dict(clk=1, l=1, e=1)
-    def make(self):
-        i = self.get_inputs()
-        select_mux = cb.SimpleMux(s=i.l, d1=i.d)
-        flip = DFlipFlop(d=select_mux.y, clk=i.clk)
-        select_mux.connect(a0=flip.q)
-        self.set_tristate(q=i.e)
-        self.set_outputs(q=flip.q)
-        
+        #have nice defaults without user intervention
+        inverter = OR(a=i.l+i.e, b=Bus.gnd(2), bubbles = ['y'])
+        e, l = inverter.y[0], inverter.y[1]
+        l_mux = cb.BaseMux(d1=i.d, s=l)
+        reset_mux = cb.BaseMux(d0=l_mux.y, d1=Bus.gnd(l_mux.y), s=i.r)
+        dflip = DFlipFlop(d=reset_mux.y, clk=i.clk)
+        l_mux.connect(d0=dflip.q)
+        self.set_tristate(q=e)
+        self.set_outputs(q=dflip.q)
 
         
 class Counter(BaseCircuit):
     """
     
     """
-    input_labels = "clk reset".split()
+    input_labels = "clk r".split()
     output_labels = "q".split()
-    sizes = dict(clk=1, reset=1)
+    sizes = dict(clk=1, r=1)
 
     def make(self):
         i = self.get_inputs()
         word_size = len(i.q)
-        flip = ResetFlipFlop(size=word_size, clk=i.clk, reset=i.reset)
+        flip = FlipFlop(size=word_size, clk=i.clk, r=i.r)
         b_bus = Bus.gnd(word_size -1) + Bus.vdd()
         adder = cb.CPA(a=flip.q, b=b_bus)
         flip.connect(d=adder.s)
         self.set_outputs(q=flip.q)
        
-
-class ROM(BaseCircuit):
-    """
-    Implementation of ROM. Use burn_rom method to assign values to rom.
-    Takes the memory word size as a parameter. The number of words in ROM is
-    give by the size of the addr bus.
-    """
-    input_labels = "addr ce".split()
-    output_labels = "q".split()
-    def __init__(self, word_size, **kwargs):
-        self.word_size = word_size
-        self.sizes = dict(q=word_size, ce=1)
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        W_bus = i.q
-        addr_decoder = cb.Decoder(a=i.addr, e=Bus.vdd())
-        self.set_tristate(q=i.ce)
-        words = len(addr_decoder.y)
-        self.cells = [OR(size=self.word_size) for _ in range(words)]
-        for cell, bus in zip(self.cells, addr_decoder.y):
-            cell.set_tristate(y=bus)
-            cell.connect(y=W_bus)
-
-    def fburn(self, f):
-        """Call IOHelper on f to open a file and get the memory contents
-        then burn the rom with the words in f"""
-        words = tools.IOHelper.parse_memory(f)
-        self.burn(words)
-        
-    def burn(self, contents):
-        """Assign word in contents sequentially to memory cells"""
-        for word, cell in zip(contents, self.cells):
-            cell.a = word
-
-
-class MemoryCell(BaseCircuit):
-    """
-    
-    """
-    input_labels = "d clk w en".split()
-    output_labels = "q".split()
-    sizes = dict(clk=1, w=1, en=1)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        mux = cb.SimpleMux(s=i.w, d1=i.d)
-        mux.connect(d0=mux.y)
-        flip = DFlipFlop(d=mux.y, clk=i.clk)
-        self.set_tristate(q=i.en)
-        self.set_outputs(q=flip.q)
-
-        
-class RAM(BaseCircuit):
-    """
-    
-    """
-    input_labels = "d clk addr w en".split()
-    output_labels = "q".split()
-    sizes = dict(en=1, clk=1, w=1)
-    def __init__(self, word_size, **kwargs):
-        self.word_size = word_size
-        self.sizes.update(q=word_size, d=word_size)
-        super().__init__(**kwargs)
-
-    def make(self):
-        i = self.get_inputs()
-        self.set_tristate(q=i.en)
-        addr_lines = cb.Decoder(a=i.addr, e=Bus.vdd())
-        cells = [MemoryCell(clk=i.clk, d=i.d, en=en_bus, q=i.q) for en_bus in addr_lines.y]
-        write_gates = [AND(a=i.w, b=bus) for bus in addr_lines.y]
-        for gate, cell in zip(write_gates, cells):
-            cell.connect(w=gate.y)
 
 class SettableCounter(BaseCircuit):
     """
@@ -205,3 +116,25 @@ class SettableCounter(BaseCircuit):
         mux.connect(d0=adder.s)
         self.set_outputs(q=flip.q)
 
+
+class RAM(BaseCircuit):
+    """
+    Word adressable RAM implementation.
+    w and ce are high active.
+    """
+    input_labels = "d clk addr w ce".split()
+    output_labels = "q".split()
+    def __init__(self, word_size, **kwargs):
+        self.word_size = word_size
+        self.sizes = dict(ce=1, clk=1, w=1, q=word_size, d=word_size)
+        super().__init__(**kwargs)
+
+    def make(self):
+        i = self.get_inputs()
+        self.set_tristate(q=i.ce)
+        #cells have active low enable
+        addr_lines = cb.Decoder(a=i.addr, e=Bus.vdd())
+        cells = [FlipFlop(clk=i.clk, d=i.d, e=en_bus, q=i.q, bubbles=['e']) for en_bus in addr_lines.y]
+        write_gates = [AND(a=i.w, b=bus, bubbles=['y']) for bus in addr_lines.y]
+        for gate, cell in zip(write_gates, cells):
+            cell.connect(l=gate.y)

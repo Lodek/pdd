@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import base_tester
+from base_tester import BaseCircuitTester
 import unittest, logging
 from blocks.combinational import *
 from tools import TruthTable, SignalGen
@@ -7,16 +8,6 @@ import truth_tables
 from core import Wire
 
 Wire.auto_update = True
-
-class BaseCircuitTester(unittest.TestCase):
-    def _tester(self, circuit, truth_table):
-        gen = SignalGen.sweep_circuit(circuit)
-        states = [circuit.state_int for _ in gen.iterate()]
-        generated_table = TruthTable(states)
-        self.assertEqual(truth_table, generated_table)
-
-    def assertSigEq(self, bus, n):
-        self.assertEqual(int(bus.signal), n)
 
 class TestGate(BaseCircuitTester):
                

@@ -1,16 +1,19 @@
+import base_tester
+from base_tester import BaseCircuitTester
 from dl import Bus, BaseCircuit
-import blocks.sequential as sb
+from blocks import *
 import unittest, logging
+from core import Wire
 
-BaseCircuit.autoupdate = True
+Wire.auto_update = True
 
 
-class TestROM(unittest.TestCase):
+class TestROM(BaseCircuitTester):
 
     def test_memory(self):
         """Test ROM by assigning directly to the bit cells"""
         words = 4
-        rom = sb.ROM(words, ce=Bus.vdd(), size=2)
+        rom = cb.ROM(words, ce=Bus.vdd(), size=2)
         signals = range(words)
         rom.burn(signals)
         for i in range(words):
@@ -18,33 +21,17 @@ class TestROM(unittest.TestCase):
             self.assertEqual(int(rom.q.signal), i)
 
     
-class TestMemoryCell(unittest.TestCase):
-
-    def test_cell(self):
-        """Test memory cell by testing that it can be written to,
-        read and that tristate work"""
-        cell = sb.MemoryCell(size=4)
-        cell.auto_update = True
-        cell.w.set()
-        cell.en.set()
-        cell.d=7
-        cell.clk.pulse()
-        self.assertEqual(int(cell.q.signal), 7)
-        cell.w.reset()
-        cell.d=3
-        cell.clk.pulse()
-        self.assertEqual(int(cell.q.signal), 7)
-
-class TestRAM(unittest.TestCase):
+class TestRAM(BaseCircuitTester):
 
     def test_ram(self):
         """Test 4x4 memory array"""
         ram = sb.RAM(4, size=2)
+        clk = ram.clk
         ram.d = 0xf
-        ram.addr=1
+        ram.addr = 1
         ram.w.set()
-        ram.en.set()
-        ram.clk.pulse()
+        ram.ce.set()
+        clk.pulse()
         self.assertEqual(int(ram.q.signal), 0xf)
         ram.w.reset()
         ram.d=1
