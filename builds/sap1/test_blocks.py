@@ -1,12 +1,9 @@
 #!/usr/bin/env python
-path_to_codebase = '../../pdd'
-sys.path.append(path_to_codebase)
-import base_tester
-import unittest, logging
-from dl import Bus
+import unittest
+from pdd.dl import Bus
+from pdd.blocks import *
+from pdd.tools import TruthTable, BaseCircuitTester
 from blocks import *
-import truth_tables
-from tools import gen_output_table, TruthTable
 
 class TestSapBlocks(BaseCircuitTester):
 
@@ -44,12 +41,6 @@ class TestSapBlocks(BaseCircuitTester):
         self.AssertSigEq(circ.q, 3)
         self.AssertSigEq(circ.qt, 2)
 
-    
-        
-
-        
-
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)
     unittest.main()

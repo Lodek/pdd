@@ -1,5 +1,5 @@
 import unittest, logging
-from dl import Bus, BaseCircuit
+from pdd.dl import Bus, BaseCircuit
 
 class MockCircuit(BaseCircuit):
     def __init__(self, input_labels, output_labels, **kwargs):
@@ -77,7 +77,7 @@ class TestBaseCircuit(unittest.TestCase):
         """Test that get_input return the correct Buses"""
         obj = self.obj_bus()
         obj.update()
-        l = [self.a, self.b]
+        l = [self.a, self.b, obj.y]
         inputs = [b for b in obj.get_inputs()]
         self.assertEqual(l, inputs)
 

@@ -1,5 +1,6 @@
 """Use on ipython to remove repitition of testing stuff"""
 
+
 from blocks import *
 from dl import Bus
 from core import Wire
@@ -18,3 +19,5 @@ cu.d = 0x0
 gen = SignalGen.pulse(cu.clk, 10)
 signals = [cu.state for _ in gen.iterate()]
 
+if __name__ == '__main__' and __package__ is None:
+    __package__ = 'pdd'

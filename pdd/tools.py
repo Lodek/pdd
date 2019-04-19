@@ -1,5 +1,5 @@
-from dl import Bus
-import re
+from pdd.dl import Bus
+import unittest, re
 
 class TruthTable:
     """
@@ -146,3 +146,17 @@ class IOHelper:
     def parse_memory(cls, p):
         text = cls._get_text(p)
         return [cls._caster(line) for line in text.split('\n') if line]
+
+class BaseCircuitTester(unittest.TestCase):
+    """
+    Base class for testing circuits. Adds dry and helpful assert method
+    """
+    def _tester(self, circuit, truth_table):
+        gen = SignalGen.sweep_circuit(circuit)
+        states = [circuit.state_int for _ in gen.iterate()]
+        generated_table = TruthTable(states)
+        self.assertEqual(truth_table, generated_table)
+
+    def assertSigEq(self, bus, n):
+        self.assertEqual(int(bus.signal), n)
+

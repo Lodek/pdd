@@ -1,8 +1,8 @@
 """
 Combinal Logic building blocks
 """
-from core import Signal
-from dl import BaseCircuit, Bus
+from pdd.core import Signal
+from pdd.dl import BaseCircuit, Bus
 
 class Gate(BaseCircuit):
     """

@@ -1,10 +1,9 @@
 """
 Sequential Logic building blocks
 """
-from blocks.combinational import AND, OR, XOR
-import blocks.combinational as cb
-from dl import BaseCircuit, Bus
-import tools
+from pdd.combinational_blocks import AND, OR, XOR
+import pdd.combinational_blocks as cb
+from pdd.dl import BaseCircuit, Bus
 
 class SRLatch(BaseCircuit):
     """

@@ -1,5 +1,5 @@
 from collections import namedtuple
-from core import Updater, Signal, Wire, StaticWire
+from pdd.core import Updater, Signal, Wire, StaticWire
 import warnings, logging
 
 logger = logging.getLogger(__name__)
@@ -483,8 +483,4 @@ class BaseCircuit:
         Wire.auto_update = value
 
 BaseCircuit.parent = BaseCircuit
-
-
-
-
 

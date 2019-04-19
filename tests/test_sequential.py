@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 import base_tester
-from base_tester import BaseCircuitTester
 import unittest, logging
-from blocks.sequential import *
-from tools import TruthTable, SignalGen
+from pdd.sequential_blocks import *
+from pdd.tools import TruthTable, SignalGen, BaseCircuitTester
 import truth_tables
-from core import Wire
+from pdd.core import Wire
 
 Wire.auto_update = True
 

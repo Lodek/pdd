@@ -1,5 +1,5 @@
-from blocks import *
-from dl import Bus, BaseCircuit
+from pdd.blocks import *
+from pdd.dl import Bus, BaseCircuit
 
 class ALU(BaseCircuit):
     """
@@ -8,11 +8,10 @@ class ALU(BaseCircuit):
     input_labels = "a b sub e".split()
     output_labels = "s".split()
     sizes = dict(e=1, sub=1)
-
     def make(self):
         i = self.get_inputs()
         #Mux controls whether B should be negated or not
-        select_b = cb.SimpleMux(d0=i.b, d1=i.b, s=i.sub, bubbles=['d1'])
+        select_b = cb.BaseMux(d0=i.b, d1=i.b, s=i.sub, bubbles=['d1'])
         adder = cb.CPA(a=i.a, b=select_b.y, cin=i.sub)
         self.set_tristate(s=i.e)
         self.set_outputs(s=adder.s)

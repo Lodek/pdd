@@ -1,7 +1,7 @@
 import base_tester
 import unittest, logging, pdb
-from dl import Bus, Terminal
-from core import Signal
+from pdd.dl import Bus, Terminal
+from pdd.core import Signal
 
 class TestBus(unittest.TestCase):
 

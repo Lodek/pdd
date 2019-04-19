@@ -1,5 +1,5 @@
 import base_tester
-from tools import TruthTable
+from pdd.tools import TruthTable
 
 OR = TruthTable([dict(a=0, b=0, y=0),
                  dict(a=0, b=1, y=1),

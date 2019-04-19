@@ -1,9 +1,9 @@
 import base_tester
-from base_tester import BaseCircuitTester
-from dl import Bus, BaseCircuit
-from blocks import *
+from pdd.dl import Bus, BaseCircuit
+from pdd.blocks import *
 import unittest, logging
-from core import Wire
+from pdd.core import Wire
+from pdd.tools import BaseCircuitTester
 
 Wire.auto_update = True
 
@@ -42,5 +42,4 @@ class TestRAM(BaseCircuitTester):
 
         
 if __name__ == '__main__':
-    logging.basicConfig(filename=__file__+'.txt', filemode='w', level=logging.DEBUG)
     unittest.main()

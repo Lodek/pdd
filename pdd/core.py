@@ -19,7 +19,7 @@ class Wire:
     """
     Event = namedtuple('Event', ('obj'))
     updater = None
-    auto_update = False
+    auto_update = True
     def __init__(self, bit=0):
         self._bit = 0
         self.bit = bit
@@ -44,7 +44,7 @@ class Wire:
         self._bit = value
         event = self.Event(self)
         self.updater.notify(event)
-        if self.auto_update and not self.updater.updating:
+        if not self.updater.updating and self.auto_update:
             self.updater.update()
         
 class StaticWire:
@@ -156,6 +156,7 @@ class Updater:
     """
     def __init__(self, threshold=2**16):
         logger.info('Updater object created')
+        self.auto_update = True
         self.threshold = threshold
         self.updating = False
         self.events = []

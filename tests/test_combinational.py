@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 import base_tester
-from base_tester import BaseCircuitTester
 import unittest, logging
-from blocks.combinational import *
-from tools import TruthTable, SignalGen
+from pdd.combinational_blocks import *
+from pdd.tools import TruthTable, SignalGen, BaseCircuitTester
 import truth_tables
-from core import Wire
+from pdd.core import Wire
+from pdd.dl import BaseCircuit
 
-Wire.auto_update = True
+
 
 class TestGate(BaseCircuitTester):
                

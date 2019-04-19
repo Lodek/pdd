@@ -1,8 +1,8 @@
 import base_tester
 import unittest, logging
 import truth_tables
-from tools import TruthTable, IOHelper, SignalGen
-from dl import Bus
+from pdd.tools import TruthTable, IOHelper, SignalGen
+from pdd.dl import Bus
 
 class TestTruthTable(unittest.TestCase):
 
