@@ -3,6 +3,8 @@ Combinal Logic building blocks
 """
 from pdd.core import Signal
 from pdd.dl import BaseCircuit, Bus
+import pdd.tools as tools
+
 
 class Gate(BaseCircuit):
     """
@@ -81,6 +83,9 @@ def OR(inputs=2, **kwargs):
         return Gate(op=Gate.OR, **kwargs)
     elif inputs > 2:
         return nGate(inputs, op=Gate.OR, **kwargs)
+
+def INV(**kwargs):
+    return Gate(op=Gate.OR, bubbles=['y'], **kwargs)
 
 class BaseMux(BaseCircuit):
     """
@@ -333,4 +338,6 @@ class ROM(BaseCircuit):
         """Assign word in contents sequentially to memory cells"""
         for word, cell in zip(contents, self.cells):
             cell.a = word
+        for cell in self.cells:
+            cell.update()
 

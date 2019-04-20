@@ -1,8 +1,9 @@
 """
 Sequential Logic building blocks
 """
-from pdd.combinational_blocks import AND, OR, XOR
+
 import pdd.combinational_blocks as cb
+from pdd.gates import *
 from pdd.dl import BaseCircuit, Bus
 
 class SRLatch(BaseCircuit):
