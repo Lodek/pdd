@@ -80,6 +80,11 @@ class TestSequentialBlocks(BaseCircuitTester):
             self.assertSigEq(circ.q, i)
             clk.pulse()
         self.assertSigEq(circ.q, 0)
+        for i in range(4):
+            clk.pulse()
+        circ.r.set()
+        clk.pulse()
+        self.assertSigEq(circ.q, 0)
     
 if __name__ == '__main__':
     #logging.basicConfig(filename='core.log', filemode='w', level=logging.DEBUG)

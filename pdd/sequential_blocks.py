@@ -83,7 +83,7 @@ class FlipFlop(BaseCircuit):
         
 class Counter(BaseCircuit):
     """
-    
+    Counter with a synchronous reset
     """
     input_labels = "clk r".split()
     output_labels = "q".split()
@@ -92,9 +92,11 @@ class Counter(BaseCircuit):
     def make(self):
         i = self.get_inputs()
         word_size = len(i.q)
-        flip = FlipFlop(size=word_size, clk=i.clk, r=i.r)
-        b_bus = Bus.gnd(word_size -1) + Bus.vdd()
-        adder = cb.CPA(a=flip.q, b=b_bus)
+        flip = FlipFlop(q=i.q, clk=i.clk)
+        one_bus = Bus.gnd(word_size -1) + Bus.vdd()
+        minus_one_bus = Bus.vdd(i.q)
+        reset_mux = cb.BaseMux(d0=flip.q, d1=minus_one_bus, s=i.r)
+        adder = cb.CPA(a=reset_mux.y, b=one_bus)
         flip.connect(d=adder.s)
         self.set_outputs(q=flip.q)
        
