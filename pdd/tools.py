@@ -160,3 +160,18 @@ class BaseCircuitTester(unittest.TestCase):
     def assertSigEq(self, bus, n):
         self.assertEqual(int(bus.signal), n)
 
+class Inspector:
+    """
+    Inspector eases the process of capturing circuit states sequentially,
+    takes a dictionary of circuits with name and circuit as key, value.
+    Each time a state needs to be recorded inspect will call the state for all
+    circuits and record the state in a dictionary.
+    """
+    def __init__(self, circuits):
+        self.circuits = circuits
+        self.states = []
+
+    def inspect(self):
+        """Calls states in all circuits and appends the result to the list of states"""
+        state = {name : circuit.state_internal for name, circuit in self.circuits.items()}
+        self.states.append(state)

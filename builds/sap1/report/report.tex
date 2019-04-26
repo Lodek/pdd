@@ -1,0 +1,13 @@
+* Theory
+** Instruction set
+The SAP1 architecture is composed of 5 instructions: ADD, LDA, SUB, HLT, OUT. It's a minimal architecture and doesn't implement jump instructions. The architecture is Bus-based with a single bus for data and instructions, the common bus is called W.
+The Bus W operates on 8 bit words, every instructions is divided in two nibbles where the 4 lower bits represent a memory address and the upper 4 upper bits represent the instruction op code.
+
+Figure \ref{fig-sap1-blocks} is a block diagram of the architecture. The main components are: Program counter, Accumulator register (A), B Register, memory address register (MAR), 16x8 ROM, adder/subtractor (ALU), instruction register (IR), output register (OUT) and controller (analogous to a control unit). This architecture relies heavily on tri-stated components, all blocks but OUT, MAR and Controller have tri-stated outputs.
+
+| Instruction | Op code |
+| LDA         |     0x0 |
+| ADD         |     0x1 |
+| SUB         |     0x2 |
+| OUT         |     0xD |
+

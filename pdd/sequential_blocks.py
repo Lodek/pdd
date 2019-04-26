@@ -71,33 +71,33 @@ class FlipFlop(BaseCircuit):
     def make(self):
         i = self.get_inputs()
         #have nice defaults without user intervention
-        inverter = OR(a=i.l+i.e, b=Bus.gnd(2), bubbles = ['y'])
-        e, l = inverter.y[0], inverter.y[1]
-        l_mux = cb.BaseMux(d1=i.d, s=l)
-        reset_mux = cb.BaseMux(d0=l_mux.y, d1=Bus.gnd(l_mux.y), s=i.r)
+        not_e = INV(a=i.e).y
+        l_mux = cb.BaseMux(d0=i.d, s=i.l)
+        reset_mux = cb.BaseMux(d0=l_mux.y, d1=Bus.gnd(i.d), s=i.r)
         dflip = DFlipFlop(d=reset_mux.y, clk=i.clk)
-        l_mux.connect(d0=dflip.q)
-        self.set_tristate(q=e)
+        l_mux.connect(d1=dflip.q)
+        self.set_tristate(q=not_e)
         self.set_outputs(q=dflip.q)
 
         
 class Counter(BaseCircuit):
     """
-    Counter with a synchronous reset
+    Counter with a synchronous reset.
+    c is a count signal, if c is high counter will increment on the rising edge
+    otherwise it won't.
     """
-    input_labels = "clk r".split()
+    input_labels = "clk r c".split()
     output_labels = "q".split()
-    sizes = dict(clk=1, r=1)
+    sizes = dict(clk=1, r=1, c=1)
 
     def make(self):
         i = self.get_inputs()
         word_size = len(i.q)
         flip = FlipFlop(q=i.q, clk=i.clk)
-        one_bus = Bus.gnd(word_size -1) + Bus.vdd()
-        minus_one_bus = Bus.vdd(i.q)
-        reset_mux = cb.BaseMux(d0=flip.q, d1=minus_one_bus, s=i.r)
-        adder = cb.CPA(a=reset_mux.y, b=one_bus)
-        flip.connect(d=adder.s)
+        c_gate = AND(a=Bus.vdd(), b=i.c)
+        adder = cb.CPA(a=flip.q, b=c_gate.y.zero_extend(flip.q))
+        reset_mux = cb.BaseMux(d0=adder.s, d1=Bus.gnd(adder.s), s=i.r)
+        flip.connect(d=reset_mux.y)
         self.set_outputs(q=flip.q)
        
 

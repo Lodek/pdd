@@ -76,6 +76,10 @@ class TestSequentialBlocks(BaseCircuitTester):
         clk.pulse()
         circ.r.reset()
         self.assertSigEq(circ.q, 0)
+        clk.pulse()
+        clk.pulse()
+        self.assertSigEq(circ.q, 0)
+        circ.c.set()
         for i in range(2**4):
             self.assertSigEq(circ.q, i)
             clk.pulse()

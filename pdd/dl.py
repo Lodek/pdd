@@ -275,6 +275,7 @@ class BaseCircuit:
     updater = u
     parent = None
     children = []
+    state_internal_flag = True
     def __init__(self, **kwargs):
         #self.input_labels = []
         #self.output_labels = []
@@ -320,7 +321,9 @@ class BaseCircuit:
 
     def __repr__(self):
         s = '{}: '.format(self.__class__.__name__)
-        return s + str(self.state)
+        #state = self.state_internal if self.state_internal_flag else self.state
+        state = self.state_internal
+        return s + str(state)
 
     @staticmethod
     def get_parent():
@@ -465,6 +468,13 @@ class BaseCircuit:
         i.update(o)
         return i
 
+    @property
+    def state_internal(self):
+        i = {label : str(self.terminals[label].y.signal) for label in self.input_labels}
+        o = {label : str(self.terminals[label].a.signal) for label in self.output_labels}
+        i.update(o)
+        return i
+    
     @property
     def state_int(self):
         i = {label : int(self.terminals[label].a.signal) for label in self.input_labels}
