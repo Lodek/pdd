@@ -140,4 +140,11 @@ Ugh, testing all those darn blocks sound so tedious.
 - test the mess
 - 
 
-  
+* sap1 issues
+- unittested modules, they all work but once adding together they don't
+- debugging is difficult, takes too long to update, acessing the needed information is not trivial
+- no real way to test/debug processor.
+- add external inputs/output for W bus, win wout
+- acquiring information from sequential circuits is difficult. Combinational logic the internal tristate thing is okay. Design oversight reguarding tristate shared bus
+- higher level api to interface with sequential circuits? I think that might be attractive
+- methods in processor class that do stuff like lda, add, sub or whatever? (override control bus)

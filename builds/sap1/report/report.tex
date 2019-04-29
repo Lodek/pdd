@@ -1,13 +1,42 @@
 * Theory
 ** Instruction set
-The SAP1 architecture is composed of 5 instructions: ADD, LDA, SUB, HLT, OUT. It's a minimal architecture and doesn't implement jump instructions. The architecture is Bus-based with a single bus for data and instructions, the common bus is called W.
-The Bus W operates on 8 bit words, every instructions is divided in two nibbles where the 4 lower bits represent a memory address and the upper 4 upper bits represent the instruction op code.
+The SAP1 architecture is an 8 bit, minimalistic and pedagogical architecture described in \cite{malv}. The architecture is bus oriented with a single bus for data, instructions and addresses; two 8-bit registers, accumulator (ACC) and B register; 8-bit output register and a 4x8-bits RAM program memory shared for data and instructions. Its instruction set is made up of 5 instructions: ADD, LDA, SUB, HLT and OUT (for the purposes of this article the HLT instruction wasn't implemented). The lack of a jump instruction makes this architecture very primitive but a valuable learning aid nonetheless. Instructions are divided in two nibbles, the most-significant nibble carries the op-code of the instruction and the least-significant nibble carries an address. Figure \ref{fig-sap1-blocks} is a block diagram of the architecture, asside from the afore-mentioned elements the usual suspects are present, such as: program counter, memory address register (MAR), ALU, instruction register (IR), and control unit. This architecture relies heavily on tri-stated components. The op-code for the instructions are in table \ref{tb1} along with it's description.
 
-Figure \ref{fig-sap1-blocks} is a block diagram of the architecture. The main components are: Program counter, Accumulator register (A), B Register, memory address register (MAR), 16x8 ROM, adder/subtractor (ALU), instruction register (IR), output register (OUT) and controller (analogous to a control unit). This architecture relies heavily on tri-stated components, all blocks but OUT, MAR and Controller have tri-stated outputs.
+| Instruction | Op code | Description                                                                                              |
+| LDA         |     0x0 | Loads the accumulator with the data stored at the given address                                          |
+| ADD         |     0x1 | Adds the value stored at the given address with the contents of the ACC and store the result in ACC      |
+| SUB         |     0x2 | Subtracts the value stored at the given address with the contents of the ACC and store the result in ACC |
+| OUT         |     0xE | Write the contents of ACC into the output register, this instruction ignores the address nibble.         |
+** Micro arquitetura
+The micro-architecture implemented has the same characteristics as the one describe in \cite{malv}, each instruction is divided in 6 cycles. The registers, counters and memory are building blocks of digital circuits and no alteration is needed except for tristating the outputs; the ALU is an adder/subtractor block which is also commonplace. The control unit was implemented using ROMs as look up tables. It takes 2 signals, the micro instruction cycle, which ranges from 0-5 and the instruction nibble itself.
 
-| Instruction | Op code |
-| LDA         |     0x0 |
-| ADD         |     0x1 |
-| SUB         |     0x2 |
-| OUT         |     0xD |
+** PDD
+A implementação do processador foi feita usando o programa desenvolvido durante a fase de pesquisa do projeto (PDD) que atua como um simulador de circuitos digitais com sinais digitais ideais. PDD é escrito em Python puro e é distribuido como um pacote Python comum. A descrição completa da arquitetura do simulador é complexa e foje do escopo desse artigo porém as principais caractéristicas são instrutivas. PDD foi construído com orientação a objetos em seu núcleo, novos circuitos são implementados pelo usuário de maneira direta utilizando o conceito de herança. No momento PDD não possui um front-end que seja amigável a usuários inexperientes porém é completamente capaz de simular um processador como será demostrado. PDD dispõe ao usuário os principais circuitos combinacionais, sequenciais e as portas lógicas; a partir desses circuitos pode-se construir qualquer circuito digital.
+
+* Procedimento Experimental
+  
+A fim de expandir os conceitos de modularidade muito presentes no paradigma de circuitos digitais o processador foi separado em 2 partes que interagem, os blocos CU e SAU. O bloco CU é a unidade de controle do processador e como entrada recebe o ciclo da micro instrução e o opcode da instrução sendo executada e como saída a palavra de controle que é aceita pela SAU para controlar os elementos do processador; SAU contém todos os outros elementos descritos anteriormente, SAU recebe um sinal de clock e reset (clk e r) e diversas flags de controle como entrada; como saida o ciclo da micro-instrução (ic), a bus de saída do registrador out e o opcode da intrução (iw). A separação foi feita para facilitar no processo de desenvolvimento do processador pois tendo dois modulos bem definidos como a SAU e CU facilitam imensamente o processo de debugar, algo muito prezado durante o desenvolvimento do PDD. Esse metodo possibilita que cada bloco seja testado com facilidade usando testes unitarios, conceito muito comum na programação. A fígura \ref{img-sau-cu} demonstra os dois blocos e como os mesmos interagem.
+
+Como todo circuito em PDD, foi criado uma classe para o bloco CU com as entradas e saídas como descritas anteriormente. Internamente CU é apenas uma look up table usando uma memoria ROM. O endereço da memoria é dada pela concatenção das buses ic e iw, a memoria tem como tamanho de palavra 12 bits, um bit para cada flag da SAU, as micro instruções do processador estão disponiveis em \cite{malv}. A tabela \ref{tab-flags} lista as 12 flags e suas funções. 
+
+O bloco SAU foi implementado da mesma maneira como pode ser visto na imagem \ref{fig-sap-blocks} com a adição de um contador e um comparador que são responsáveis por marcar o ciclo das micro instruções, o comparador tem como uma das entradas o sinal $0x5$ e na outra o contador, sua saída é ligada à entrada de reset "r" do circuito contador.
+
+Finalmente uma ultima classe referente ao processador foi criada. O processador tem duas entradas: reset (r) e clock (clk) e uma unica saída chamda de out. Internamente o processador é composto pelos blocos SAU e CU. As flags de SAU são conectadas a partir de CU os sinais r e clk do processador, as saidas iw e ic são ligadas ao bloco CU. Tendo feito essas conexões a construção do processador está finalizada.
+
+Para executar programas no processador basta escrever em um arquivo de texto o conteúdo da memória e usar o método "fburn" da class ROM para carregar o programa. Feito isso basta gerar pulsos de clock utilisando os comandos existentes para operar sobre a bus clk do processador.
+
+* Resultados
+
+Foram escritos 2 programas para o programa executar. Os programas foram executados e foi inspecionado se o resultado escrito para o registrador "out" era o esperado.
+
+O primeiro programa escrito simplemeste carrega um valor no registrador ACC com a instrução LDA e move esse valor para o registrador out com a instrução OUT. Este programa é extremamente simples e foi usado para testar as intruções básicas. O segundo programa utiliza as intruções LDA e OUT que já foram testadas e realiza somas e subtrações sobre esses valores. A tabela \ref{tab-progs} demonstra os dados escritos na memória do processador e o resultado experado. O código fonte para reproduzir esses resultados pode ser encontrado em --
+
+* Conlusão 
+
+O programa PDD possibilita a simulação de circuitos digitais e ainda foi possível replicar a arquitetura descrita na literatura e obter resultados corretos. A arquitetura escolhida é simples porém a base de qualquer arquitetura está presente nela, sendo assim é possivel utilizar a mesma ferramenta para simular uma arquitetura mais completa (mais instruções) e diferentes tamanhos de palavras. O objetivo da ferramente construida é respeitar os principios dos circuitos digitais, gerar uma abstração que seja familiar para estudantes com expêriencia em montar circuitos em protoboards e possibilitar a construção de circuitos digitais abstratos usando os principios da programação orientada a objetos.
+
+Um grande defeito de PDD é velocidade, devido à estrutura dada ao aplicativo pode-se notar uma performance que se deixa a desejar. Para corrigir esses problema existem varias alternativas como: utilizar caches para reduzir redundância devido aos eventos, utilizar algoritimos mais sofisticados e paralelismo para realizar as operações e trocar a pureza da implementação dos blocos sequências e combinacionais (devido ao fato de terem sido utilizados somentes portas lógicas para a sua construção) e optar por uma implementação rápida utilizando as operações já construidas no processador do usuário.
+
+
+
 
