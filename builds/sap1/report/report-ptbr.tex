@@ -6,6 +6,7 @@
 \usepackage{graphicx}
 \usepackage{tabularx}
 \usepackage{abstract}
+\usepackage{hyperref}
 \begin{document}
 \title{Relátio referente a construção do processador SAP1 em Python}
 \author{Bruno Gomes}
@@ -31,7 +32,7 @@ A micro arquitetura implementada possui foi baseada na implementação feita na 
 
 \begin{table}
   \caption{Instruções da arquitetura SAP1 e suas descrições.}
-\begin{tabular*}{\linewidth}{lcp{8cm}}
+\begin{tabular*}{\linewidth}{lcp{6cm}}
   \hline
  Inst. & Op code & Descrição \\
  \hline
@@ -55,6 +56,7 @@ A fim de expandir os conceitos de modularidade muito presentes no paradigma de c
 Como todo circuito em PDD, foi criado uma classe para o bloco CU com as entradas e saídas como descritas anteriormente. Internamente CU é apenas uma look up table usando uma memoria ROM. O endereço da memoria é dada pela concatenção das buses ic e iw, a memoria tem como tamanho de palavra 12 bits, um bit para cada flag da SAU, as micro instruções do processador estão disponiveis em \cite{malv}. A tabela \ref{tab-flags} lista as 12 flags e suas funções. 
 
 \begin{table}
+  \caption{Descrição das flags de controle do processador.}
 \begin{tabular}{ll}
 \hline
 Flag & Descricao \\
@@ -90,7 +92,8 @@ Para executar programas no processador basta escrever em um arquivo de texto o c
 
 \section{Resultados}
 
-Foram escritos 3 programas para o programa executar. Os programas foram executados e foi inspecionado se o resultado escrito para o registrador "out" era o esperado.
+Foram escritos 3 programas para o programa executar. Os programas foram executados e foi inspecionado se o resultado escrito para o registrador "out" era o esperado. O código fonte da implementação do processador e dos programas executados está disponível em \url{https://github.com/Lodek/pdd/tree/master/builds/sap1}.
+
 
 \subsection{Programa 1}
 O primeiro programa escrito simplemeste carrega um valor no registrador ACC com a instrução LDA e move esse valor para o registrador out com a instrução OUT. Este programa é extremamente simples e foi usado para testar as intruções básicas. A tabela \ref{tab-p1} contém o contéudo escrito na memória do processador. O resultado esperado da execução do programa é que o valor no registrador out seja 3 e o resultado obtido está de acordo.

@@ -239,7 +239,6 @@ class TestProcessor(BaseCircuitTester):
             self.assertTrue(False)
 
 
-
         
 if __name__ == '__main__':
     unittest.main()
