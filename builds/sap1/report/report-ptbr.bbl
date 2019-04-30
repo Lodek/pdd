@@ -1,0 +1,49 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.0 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nyt/global//global/global}
+    \entry{malv}{book}{}
+      \name{author}{1}{}{%
+        {{uniquename=0,uniquepart=base,hash=87a714dcd6712639fe6989a0c8f98e38}{%
+           family={Malvino\bibnamedelima A.},
+           familyi={M\bibinitperiod\bibinitdelim A\bibinitperiod},
+           given={Brown\bibnamedelima J.},
+           giveni={B\bibinitperiod\bibinitdelim J\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{87a714dcd6712639fe6989a0c8f98e38}
+      \strng{fullhash}{87a714dcd6712639fe6989a0c8f98e38}
+      \strng{bibnamehash}{87a714dcd6712639fe6989a0c8f98e38}
+      \strng{authorbibnamehash}{87a714dcd6712639fe6989a0c8f98e38}
+      \strng{authornamehash}{87a714dcd6712639fe6989a0c8f98e38}
+      \strng{authorfullhash}{87a714dcd6712639fe6989a0c8f98e38}
+      \field{sortinit}{M}
+      \field{sortinithash}{cfd219b90152c06204fab207bc6c7cab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{year}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Digital Computer Electronics}
+      \field{year}{1993}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

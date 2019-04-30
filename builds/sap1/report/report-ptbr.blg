@@ -1,0 +1,15 @@
+[1] Config.pm:304> INFO - This is Biber 2.12
+[1] Config.pm:307> INFO - Logfile is 'report-ptbr.blg'
+[108] biber:315> INFO - === Tue Apr 30, 2019, 00:13:29
+[177] Biber.pm:371> INFO - Reading 'report-ptbr.bcf'
+[431] Biber.pm:889> INFO - Found 1 citekeys in bib section 0
+[489] Biber.pm:4093> INFO - Processing section 0
+[525] Biber.pm:4254> INFO - Looking for bibtex format file 'refs.bib' for section 0
+[527] bibtex.pm:1523> INFO - LaTeX decoding ...
+[534] bibtex.pm:1340> INFO - Found BibTeX data source 'refs.bib'
+[595] UCollate.pm:68> INFO - Overriding locale 'pt-PT' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[596] UCollate.pm:68> INFO - Overriding locale 'pt-PT' defaults 'variable = shifted' with 'variable = non-ignorable'
+[596] Biber.pm:3921> INFO - Sorting list 'nyt/global//global/global' of type 'entry' with template 'nyt' and locale 'pt-PT'
+[596] Biber.pm:3927> INFO - No sort tailoring available for locale 'pt-PT'
+[602] bbl.pm:636> INFO - Writing 'report-ptbr.bbl' with encoding 'UTF-8'
+[605] bbl.pm:739> INFO - Output to report-ptbr.bbl
